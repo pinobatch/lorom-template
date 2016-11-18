@@ -17,9 +17,9 @@ version = 0.06
 # (use a backslash to continue on the next line)
 objlist = \
   snesheader init main bg player \
-  ppuclear blarggapu spcimage mktables
+  ppuclear blarggapu spcimage
 objlistspc = \
-  spcheader spcimage mktables
+  spcheader spcimage
 
 AS65 = ca65
 LD65 = ld65

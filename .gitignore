@@ -1,0 +1,18 @@
+*.sw[a-p]
+*.o
+*.brr
+*~
+*.chrgb
+*.chrsfc
+/obj/snes/*.s
+/obj/snes/*.wav
+/zip.in
+/map.txt
+/spcmap.txt
+__pycache__/
+*.pyc
+
+# this is Super NES homebrew, not DSiWare
+*.DS_Store
+
+
