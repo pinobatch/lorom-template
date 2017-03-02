@@ -27,19 +27,22 @@ OAMHI: .res 512
 ; Minimalist NMI handler that only acknowledges NMI and signals
 ; to the main thread that NMI has occurred.
 .proc nmi_handler
-  seta16
-  
   ; Because the INC and BIT instructions can't use 24-bit (f:)
   ; addresses, we need to set the data bank to one that can access
   ; low RAM ($0000-$1FFF) and the PPU ($2100-$213F) with a 16-bit
   ; address.  Only banks $00-$3F and $80-$BF can do this, not $40-$7D
-  ; or $C0-$FF.  But in a LoROM program, the CODE segment is usually
-  ; in a bank that can, so copy the data bank to the program bank.
+  ; or $C0-$FF.  But in a LoROM program no larger than 16 Mbit, the
+  ; CODE segment is in a bank that can, so copy the data bank to the
+  ; program bank.
   phb
   phk
   plb
+
+  seta8
   inc a:nmis       ; Increase NMI count to notify main thread
   bit a:NMISTATUS  ; Acknowledge NMI
+
+  ; And restore the previous program bank value.
   plb
   rti
 .endproc

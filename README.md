@@ -85,8 +85,6 @@ to run these programs whenever the original asset data changes.
 * `wav2brr.py` converts an uncompressed wave file to the BRR (bit
   rate reduction) format, a lossy audio codec based on ADPCM used
   by the S-DSP (the audio chip in the Super NES).
-* `mktables.py` generates some lookup tables, such as the
-  pitch table to be used by a music engine.  
 * `karplus.py` generates a plucked string sound, used for the
   bass sample.
 
