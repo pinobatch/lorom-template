@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 
 Super NES
@@ -85,7 +85,8 @@ whose length is the number of duplications.
         seq.extend(seq[-sz_lsb:])
 
 def main(argv=None):
-    args = parse_argv(argv or sys.argv)
+    argv = argv or sys.argv
+    args = parse_argv(argv)
     inmode, csaddress = modes.get(args.mode, (None, None))
     outfilename = args.outfilename or args.infilename
     progname = os.path.basename(argv[0])
@@ -156,13 +157,13 @@ def main(argv=None):
     # Actually calculate the checksum
     doubled[csaddress:csaddress + 4] = [0, 0, 255, 255]
     bytesum = sum(doubled)
-    print("%ssum of bytes is %s ($%08x)"
-          % (errpfx, bytesum, bytesum), file=sys.stderr)
     doubled[csaddress + 2] = bytesum & 0xFF
     doubled[csaddress + 3] = (bytesum >> 8) & 0xFF
     doubled[csaddress + 0] = doubled[csaddress + 2] ^ 0xFF
     doubled[csaddress + 1] = doubled[csaddress + 3] ^ 0xFF
     if args.verbose:
+        print("%ssum of bytes is %s ($%08x)"
+              % (errpfx, bytesum, bytesum), file=sys.stderr)
         tcsum = ' '.join('%02x' % b for b in doubled[csaddress:csaddress + 4])
         print("%schecksum bytes are %s"
               % (errpfx, tcsum), file=sys.stderr)
@@ -173,17 +174,17 @@ def main(argv=None):
         outfp.write(doubled)
 
 if __name__=='__main__':
-    try:
-        main('fixchecksum.py --help'.split())
-    except SystemExit:
-        print("then it'd exit.  Good.")
-    else:
-        assert False
-    try:
-        main('fixchecksum.py --version'.split())
-    except SystemExit:
-        print("then it'd exit.  Good.")
-    else:
-        assert False
-    main('fixchecksum.py -v ../lorom-template.sfc fixed.sfc --mode 20'.split())
-##    main()
+##    try:
+##        main('fixchecksum.py --help'.split())
+##    except SystemExit:
+##        print("then it'd exit.  Good.")
+##    else:
+##        assert False
+##    try:
+##        main('fixchecksum.py --version'.split())
+##    except SystemExit:
+##        print("then it'd exit.  Good.")
+##    else:
+##        assert False
+##    main('fixchecksum.py -v ../lorom-template.sfc fixed.sfc --mode 20'.split())
+    main()

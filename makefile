@@ -37,6 +37,12 @@ EMU := xterm -e zsnes -d
 # game-music-emu by blargg et al.
 SPCPLAY := gme_player
 
+ifdef COMSPEC
+PY := py.exe
+else
+PY :=
+endif
+
 # Calculate the current directory as Wine applications would see it.
 # yep, that's 8 backslashes.  Apparently, there are 3 layers of escaping:
 # one for the shell that executes sed, one for sed, and one for the shell
@@ -88,6 +94,7 @@ objlistospc = $(foreach o,$(objlistspc),$(objdir)/$(o).o)
 
 map.txt $(title).sfc: lorom256k.cfg $(objlisto)
 	$(LD65) -o $(title).sfc -m map.txt -C $^
+	$(PY) tools/fixchecksum.py $(title).sfc
 
 spcmap.txt $(title).spc: spc.cfg $(objlistospc)
 	$(LD65) -o $(title).spc -m map.txt -C $^
@@ -116,19 +123,19 @@ $(objdir)/spcimage.o: \
 # mode 0 (all planes), mode 1 (third plane), and modes 4 and 5
 # (second plane).
 $(objdir)/%.chrgb: tilesets/%.png
-	tools/pilbmp2nes.py --planes=0,1 $< $@
+	$(PY) tools/pilbmp2nes.py --planes=0,1 $< $@
 
 $(objdir)/%.chrsfc: tilesets/%.png
-	tools/pilbmp2nes.py "--planes=0,1;2,3" $< $@
+	$(PY) tools/pilbmp2nes.py "--planes=0,1;2,3" $< $@
 
 # Rules for audio
 $(objdir)/%.brr: audio/%.wav
-	tools/wav2brr.py $< $@
+	$(PY) tools/wav2brr.py $< $@
 $(objdir)/%.brr: $(objdir)/%.wav
-	tools/wav2brr.py $< $@
+	$(PY) tools/wav2brr.py $< $@
 $(objdir)/%loop.brr: audio/%.wav
-	tools/wav2brr.py --loop $< $@
+	$(PY) tools/wav2brr.py --loop $< $@
 $(objdir)/%loop.brr: $(objdir)/%.wav
-	tools/wav2brr.py --loop $< $@
+	$(PY) tools/wav2brr.py --loop $< $@
 $(objdir)/karplusbass.wav: tools/karplus.py
-	$< -o $@ -n 1024 -p 64 -r 4186 -e square:1:4 -a 30000 -g 1.0 -f .5
+	$(PY) $< -o $@ -n 1024 -p 64 -r 4186 -e square:1:4 -a 30000 -g 1.0 -f .5
