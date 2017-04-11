@@ -21,18 +21,21 @@ objlist = \
 objlistspc = \
   spcheader spcimage
 
-AS65 = ca65
-LD65 = ld65
+AS65 := ca65
+LD65 := ld65
 CFLAGS65 = 
-objdir = obj/snes
-srcdir = src
-imgdir = tilesets
+objdir := obj/snes
+srcdir := src
+imgdir := tilesets
 
 # if it's not bsnes, it's just BS
-EMU = ../shared-tools/bsnes
+#EMU := bsnes
+
+# But being stuck on an Atom laptop is BS
+EMU := xterm -e zsnes -d
 
 # game-music-emu by blargg et al.
-SPCPLAY = ../shared-tools/gme_player
+SPCPLAY := gme_player
 
 # Calculate the current directory as Wine applications would see it.
 # yep, that's 8 backslashes.  Apparently, there are 3 layers of escaping:
@@ -43,17 +46,18 @@ wincwd := $(shell pwd | sed -e "s'/'\\\\\\\\'g")
 # .PHONY means these targets aren't actual filenames
 .PHONY: all run nocash-run spcrun dist clean
 
-# Per Martin Korth on 2014-09-16: NO$SNS requires absolute
-# paths because he screwed up and made the filename processing
-# too clever.
-nocash-run: $(title).sfc
-	wine "C:\\Program Files\\nocash\\no\$$sns.exe" "Z:$(wincwd)\\$(title).sfc"
-
 # When you type make without a target name, make will try
 # to build the first target.  So unless you're trying to run
 # NO$SNS in Wine, you should move run above nocash-run.
 run: $(title).sfc
 	$(EMU) $<
+
+# Per Martin Korth on 2014-09-16: NO$SNS requires absolute
+# paths because he screwed up and made the filename processing
+# too clever.
+# Not default 
+nocash-run: $(title).sfc
+	wine "C:\\Program Files (x86)\\nocash\\no\$$sns.exe" "Z:$(wincwd)\\$(title).sfc"
 
 # Special target for just the SPC700 image
 spcrun: $(title).spc

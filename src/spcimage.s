@@ -29,6 +29,7 @@ DSP_RECHOVOL = $3C
 DSP_KEYON    = $4C
 DSP_KEYOFF   = $5C
 DSP_FLAGS    = $6C  ; 5: disable echo; 4-0: set LFSR rate
+DSP_FMCH     = $2D  ; Modulate these channels' frequency by the amplitude before it
 DSP_NOISECH  = $3D  ; Replace these channels with LFSR noise
 DSP_ECHOCH   = $4D  ; Echo comes from these channels
 DSP_SAMPDIR  = $5D  ; High byte of base address of sample table
@@ -58,42 +59,8 @@ sample_dir:
   .addr karplusbass, karplusbass_loop
   .addr testsample, testsample
 
-inst_dir:
-
-
-pulse_2:
-  .byte $B0,$9B,$BB,$BB,$BB,$BB,$BB,$BB,$B9
-  .byte $B3,$75,$55,$55,$55,$55,$55,$55,$57
-pulse_4:
-  .byte $B0,$9B,$BB,$BB,$B9,$75,$55,$55,$55
-  .byte $B3,$55,$55,$55,$55,$55,$55,$55,$57
-pulse_8:
-  .byte $B0,$9B,$B9,$75,$55,$55,$55,$55,$55
-  .byte $B3,$55,$55,$55,$55,$55,$55,$55,$57
-tri_wave:
-  ; The triangle wave is intentionally distorted slightly because the
-  ; SPC700's Gaussian interpolator has a glitch with three
-  ; consecutive 8<<12 samples.
-  .byte $C0,$00,$11,$22,$33,$44,$55,$66,$76
-  .byte $C0,$77,$66,$55,$44,$33,$22,$11,$00
-  .byte $C0,$FF,$EE,$DD,$CC,$BB,$AA,$99,$89
-  .byte $C3,$88,$99,$AA,$BB,$CC,$DD,$EE,$FF
-karplusbass:
-    .incbin "obj/snes/karplusbassloop.brr"
-karplusbass_loop = * - 36  ; period 64 samples (36 bytes)
-testsample:
-    .incbin "obj/snes/selnow.brr"
-
-; round(261.625 * 8 / 7.8125 * 2^(i / 12)) - 256
-notefreqs_lowbyte:
-  .byte  12,  28,  45,  63,  82, 102
-  .byte 123, 145, 169, 195, 221, 250
-one_shl_x:
-  .repeat 8, I
-    .byte 1 << I
-  .endrepeat
-
   nop  ; resync debugger's disassembly
+.align 256
 spc_entry:
   ldy #$7F
   lda #DSP_LVOL  ; master volume left
@@ -106,6 +73,9 @@ spc_entry:
   stya DSPADDR
   ldy #$00
   lda #DSP_KEYON  ; Clear key on
+  stya DSPADDR
+  ldy #$00
+  lda #DSP_FMCH   ; Clear frequency modulation
   stya DSPADDR
   dey
   lda #DSP_KEYOFF  ; Key off everything
@@ -344,4 +314,39 @@ instptr = $02
   lda (instptr),y
   rts
 .endproc
+
+
+; Sample data ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+pulse_2:
+  .byte $B0,$9B,$BB,$BB,$BB,$BB,$BB,$BB,$B9
+  .byte $B3,$75,$55,$55,$55,$55,$55,$55,$57
+pulse_4:
+  .byte $B0,$9B,$BB,$BB,$B9,$75,$55,$55,$55
+  .byte $B3,$55,$55,$55,$55,$55,$55,$55,$57
+pulse_8:
+  .byte $B0,$9B,$B9,$75,$55,$55,$55,$55,$55
+  .byte $B3,$55,$55,$55,$55,$55,$55,$55,$57
+tri_wave:
+  ; The triangle wave is intentionally distorted slightly because the
+  ; SPC700's Gaussian interpolator has a glitch with three
+  ; consecutive 8<<12 samples.
+  .byte $C0,$00,$11,$22,$33,$44,$55,$66,$76
+  .byte $C0,$77,$66,$55,$44,$33,$22,$11,$00
+  .byte $C0,$FF,$EE,$DD,$CC,$BB,$AA,$99,$89
+  .byte $C3,$88,$99,$AA,$BB,$CC,$DD,$EE,$FF
+karplusbass:
+    .incbin "obj/snes/karplusbassloop.brr"
+karplusbass_loop = * - 36  ; period 64 samples (36 bytes)
+testsample:
+    .incbin "obj/snes/selnow.brr"
+
+; round(261.625 * 8 / 7.8125 * 2^(i / 12)) - 256
+notefreqs_lowbyte:
+  .byte  12,  28,  45,  63,  82, 102
+  .byte 123, 145, 169, 195, 221, 250
+one_shl_x:
+  .repeat 8, I
+    .byte 1 << I
+  .endrepeat
 
