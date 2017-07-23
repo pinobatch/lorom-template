@@ -68,30 +68,30 @@ map_mode        = $00FFD5
 
   ; first clear the regs that take a 16-bit write
   lda #$0080
-  sta $00     ; Enable forced blank
-  stz $02
-  stz $05
-  stz $07
-  stz $09
-  stz $0B
-  stz $16
-  stz $24
-  stz $26
-  stz $28
-  stz $2A
-  stz $2C
-  stz $2E
+  sta $00     ; Forced blank, brightness 0, sprite size 8/16 from VRAM $0000
+  stz $02     ; OAM address = 0
+  stz $05     ; BG mode 0, no mosaic
+  stz $07     ; BG 1-2 map 32x32 from VRAM $0000
+  stz $09     ; BG 3-4 map 32x32 from VRAM $0000
+  stz $0B     ; BG tiles from $0000
+  stz $16     ; VRAM address $0000
+  stz $23     ; disable BG window
+  stz $26     ; clear window 1 x range
+  stz $28     ; clear window 2 x range
+  stz $2A     ; clear window mask logic
+  stz $2C     ; disable all layers on main and sub
+  stz $2E     ; disable all layers on main and sub in window
   ldx #$0030
-  stx $30     ; Disable color math
+  stx $30     ; disable color math and mode 3/4/7 direct color
   ldy #$00E0
-  sty $32     ; Clear red, green, and blue components of COLDATA
+  sty $32     ; clear RGB components of COLDATA; disable interlace+pseudo hires
 
   ; now clear the regs that need 8-bit writes
   sep #$20
-  sta $15     ; still $80: Inc VRAM pointer after high byte write
-  stz $1A
-  stz $21
-  stz $23
+  sta $15     ; still $80: add 1 to VRAM pointer after high byte write
+  stz $1A     ; enable mode 7 wrapping and disable flipping
+  stz $21     ; set CGRAM address to color 0
+  stz $25     ; disable obj and math window
 
   ; The scroll registers $210D-$2114 need double 8-bit writes
   .repeat 8, I
