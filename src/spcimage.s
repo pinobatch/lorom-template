@@ -52,12 +52,14 @@ ready_insts: .res 8
 sample_dir:
   ; each directory entry is 4 bytes:
   ; a start address then a loop address
-  .addr pulse_8, pulse_8
-  .addr pulse_4, pulse_4
-  .addr pulse_2, pulse_2
-  .addr tri_wave, tri_wave
-  .addr karplusbass, karplusbass_loop
-  .addr testsample, testsample
+  .addr pulse_8_brr, pulse_8_brr
+  .addr pulse_4_brr, pulse_4_brr
+  .addr pulse_2_brr, pulse_2_brr
+  .addr triangle_brr, triangle_brr
+  .addr karplusbassloop_brr, karplusbass_loop
+  .addr selnow_brr, selnow_brr
+  .addr kick_brr, kick_brr
+  .addr snare_brr, snare_brr
 
   nop  ; resync debugger's disassembly
 .align 256
@@ -109,7 +111,7 @@ spc_entry:
   ldy #>sample_dir
   stya DSPADDR
 
-  lda #80  ; 8000 Hz base / 160 = 100 Hz
+  lda #8000/125  ; S-Pently will use 125 Hz
   sta TIMERPERIOD
   lda #%10000001
   sta TIMEREN
@@ -126,7 +128,8 @@ spc_entry:
   ldy #%00000010  ; channel 1
   stya DSPADDR
 
-  ldx #10
+
+  ldx #12
 :
   lda TIMERVAL
   beq :-
@@ -147,6 +150,24 @@ spc_entry:
 
   lda #DSP_KEYON
   ldy #%00000101  ; channels 0 and 2
+  stya DSPADDR
+
+
+  ldx #62
+:
+  lda TIMERVAL
+  beq :-
+  dex
+  bne :-
+
+  ldx #4
+  lda #KICK
+  jsr ch_set_inst
+  ldy #2*12+0
+  jsr ch_set_pitch
+
+  lda #DSP_KEYON
+  ldy #%00010000  ; channel4
   stya DSPADDR
 
 
@@ -173,7 +194,7 @@ spc_entry:
   ldy #$4F
   stya DSPADDR
 
-  ldx #90  ; 10 + 90 = 100 centiseconds
+  ldx #50
 :
   lda TIMERVAL
   beq :-
@@ -192,7 +213,7 @@ forever:
 ; Instrument format
 ; $00: Left volume (bit 7-4) and right volume (bit 3-0),
 ;      used for balance and panning
-; $01: Length of period in 16-sample units
+; $01: Length of period in 16-sample units, or note 24 freq / 4186 Hz
 ; $02: Sample number
 ; $03: Attack and decay rates
 ; $04: Sustain threshold and rate
@@ -204,8 +225,7 @@ name = (* - music_inst_table) / 8
   .assert (0 <= (rvol) && (rvol) <= 15), error, "right volume must be 0-15"
   .assert (1 <= (attack) && (attack) <= 31), error, "attack must be 1-31"
   .assert (attack & 1), error, "attack must be odd"
-  .assert (17 <= (decay) && (decay) <= 31), error, "decay must be 1-31"
-  .assert (decay & 1), error, "decay must be odd"
+  .assert (16 <= (decay) && (decay) <= 31), error, "decay must be 17-31"
   .assert (0 <= (sustain) && (sustain) <= 31), error, "sustain must be 0-31"
   .assert (1 <= (sustainlevel) && (sustainlevel) <= 8), error, "sustainlevel must be 1-8"
   .byte ((lvol) << 4) | (rvol)
@@ -218,6 +238,8 @@ name = (* - music_inst_table) / 8
 
 music_inst_table:
   ;    name         lv  rv frq smp att dec sus lvl
+  INST KICK,        12, 12,  3,  6, 31, 17, 15,  8
+  INST SNARE,        8, 15,  6,  4, 29, 17, 15,  8
   INST PLING_8,      3, 15,  1,  0, 27, 21, 15,  2
   INST PLING_4,     11, 11,  1,  1, 27, 21, 15,  2
   INST PLING_2,     15,  3,  1,  2, 27, 21, 15,  2
@@ -318,16 +340,16 @@ instptr = $02
 
 ; Sample data ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-pulse_2:
+pulse_2_brr:
   .byte $B0,$9B,$BB,$BB,$BB,$BB,$BB,$BB,$B9
   .byte $B3,$75,$55,$55,$55,$55,$55,$55,$57
-pulse_4:
+pulse_4_brr:
   .byte $B0,$9B,$BB,$BB,$B9,$75,$55,$55,$55
   .byte $B3,$55,$55,$55,$55,$55,$55,$55,$57
-pulse_8:
+pulse_8_brr:
   .byte $B0,$9B,$B9,$75,$55,$55,$55,$55,$55
   .byte $B3,$55,$55,$55,$55,$55,$55,$55,$57
-tri_wave:
+triangle_brr:
   ; The triangle wave is intentionally distorted slightly because the
   ; SPC700's Gaussian interpolator has a glitch with three
   ; consecutive 8<<12 samples.
@@ -335,11 +357,15 @@ tri_wave:
   .byte $C0,$77,$66,$55,$44,$33,$22,$11,$00
   .byte $C0,$FF,$EE,$DD,$CC,$BB,$AA,$99,$89
   .byte $C3,$88,$99,$AA,$BB,$CC,$DD,$EE,$FF
-karplusbass:
+karplusbassloop_brr:
     .incbin "obj/snes/karplusbassloop.brr"
 karplusbass_loop = * - 36  ; period 64 samples (36 bytes)
-testsample:
+selnow_brr:
     .incbin "obj/snes/selnow.brr"
+kick_brr:
+    .incbin "obj/snes/kickgen.brr"
+snare_brr:
+    .incbin "obj/snes/decentsnare.brr"
 
 ; round(261.625 * 8 / 7.8125 * 2^(i / 12)) - 256
 notefreqs_lowbyte:

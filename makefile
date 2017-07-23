@@ -20,6 +20,8 @@ objlist = \
   ppuclear blarggapu spcimage
 objlistspc = \
   spcheader spcimage
+brrlist = \
+  karplusbassloop selnow kickgen decentsnare
 
 AS65 := ca65
 LD65 := ld65
@@ -91,6 +93,7 @@ $(objdir)/index.txt: makefile
 
 objlisto = $(foreach o,$(objlist),$(objdir)/$(o).o)
 objlistospc = $(foreach o,$(objlistspc),$(objdir)/$(o).o)
+brrlisto = $(foreach o,$(brrlist),$(objdir)/$(o).brr)
 
 map.txt $(title).sfc: lorom256k.cfg $(objlisto)
 	$(LD65) -o $(title).sfc -m map.txt -C $^
@@ -113,8 +116,7 @@ $(objdir)/bg.o: \
  $(objdir)/bggfx.chrgb
 $(objdir)/player.o: \
  $(objdir)/swinging2.chrsfc
-$(objdir)/spcimage.o: \
- $(objdir)/selnow.brr $(objdir)/karplusbassloop.brr
+$(objdir)/spcimage.o: $(brrlisto)
 
 # Rules for CHR data
 
