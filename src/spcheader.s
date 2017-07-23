@@ -33,7 +33,7 @@ tracksubtitle: .byte 0
   .res (spcheaderstart + $9E - *)
 builddate: .byte 0
   .res (spcheaderstart + $A9 - *)
-tracktime_s: .byte "5"
+tracktime_s: .byte "100"
   .res (spcheaderstart + $AC - *)
 fadetime_ms: .byte "0"
   .res (spcheaderstart + $B1 - *)

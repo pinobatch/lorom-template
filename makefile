@@ -21,7 +21,7 @@ objlist = \
 objlistspc = \
   spcheader spcimage
 brrlist = \
-  karplusbassloop selnow kickgen decentsnare
+  karplusbassloop hat kickgen decentsnare
 
 AS65 := ca65
 LD65 := ld65
@@ -141,3 +141,5 @@ $(objdir)/%loop.brr: $(objdir)/%.wav
 	$(PY) tools/wav2brr.py --loop $< $@
 $(objdir)/karplusbass.wav: tools/karplus.py
 	$(PY) $< -o $@ -n 1024 -p 64 -r 4186 -e square:1:4 -a 30000 -g 1.0 -f .5
+$(objdir)/hat.wav: tools/makehat.py
+	$(PY) $< $@
