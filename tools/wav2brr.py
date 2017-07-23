@@ -37,7 +37,6 @@ def load_wave_as_mono_s16(filename):
         data = array.array(datatype, infp.readframes(length))
     if datatype == 'B':
         # Expand 8 to 16 bit
-        print(repr(data[:2048]))
         data = array.array('h', ((c - 128) << 8 for c in data))
     elif not little:
         # 16-bit data is little-endian in the wave file; it needs to

@@ -44,7 +44,7 @@ def save_wave_as_mono16(filename, freq, data):
         outfp.setnchannels(1)
         outfp.setsampwidth(2)
         outfp.setframerate(freq)
-        outfp.writeframes(data.tostring())
+        outfp.writeframes(data.tobytes())
 
 def get_fir_group_delay(kernel):
     """Calculate the group delay of an FIR filter.
