@@ -82,120 +82,15 @@ sample_dir:
   nop  ; resync debugger's disassembly
 .align 256
 spc_entry:
-  ldy #$7F
-  lda #DSP_LVOL  ; master volume left
-  stya DSPADDR
-  lda #DSP_RVOL  ; master volume right
-  stya DSPADDR
-
-  ; Disable the APU features we're not using
-  ldy #%00100000  ; mute off, echo write off, LFSR noise stop
-  lda #DSP_FLAGS
-  stya DSPADDR
-  ldy #$00
-  sty music_tempoLo
-  sty music_tempoHi
-  lda #DSP_KEYON  ; Clear key on
-  stya DSPADDR
-  lda #DSP_FMCH   ; Clear frequency modulation
-  stya DSPADDR
-
-  dey
-  lda #DSP_KEYOFF  ; Key off everything
-  stya DSPADDR
-  sty tempo_counter
-  sty tempo_counter+1
-  iny
-
-  lda #DSP_NOISECH  ; LFSR noise on no channels
-  stya DSPADDR
-  lda #DSP_ECHOCH  ; Echo on no channels
-  stya DSPADDR
-  lda #DSP_LECHOVOL  ; Left echo volume = 0
-  stya DSPADDR
-  lda #DSP_RECHOVOL  ; Right echo volume = 0
-  stya DSPADDR
-  
-  ; The DSP acts on KON and KOFF only once every two samples (1/16000
-  ; seconds or 64 cycles).  A key on or key off request must remain
-  ; set for at least 64 cycles, but key off must be cleared before
-  ; key on can be set again.  If key on is set while key off is set,
-  ; it'll immediately cut the note and possibly cause a pop.
-  ldx #7
-  lda #$FF
-:
-  sta <ready_notes,x
-  dex
-  bpl :-
-
-  lda #DSP_KEYOFF
-  stya DSPADDR
-  
-  lda #DSP_SAMPDIR  ; set sample directory start address
-  ldy #>sample_dir
-  stya DSPADDR
-
-  lda #8000/TIMER_HZ  ; S-Pently will use 125 Hz
-  sta TIMERPERIOD
-  lda #%10000001
-  sta TIMEREN
-  lda TIMERVAL
-  
-  ; Start the song
-  lda #<300
-  ldy #>300
-  stya music_tempoLo
+  jsr pently_init
   lda #0
-  sta conductorWaitRows
-  ldx #7
-  initpatternloop:
-    lda #<silentPattern
-    sta <patternptrlo,x
-    lda #>silentPattern
-    sta <patternptrhi,x
-    lda #$FF
-    sta musicPattern,x
-    lda #0
-    sta <noteRowsLeft,x
-    dex
-    bpl initpatternloop
-
-  lda #<PSDAT_0300
-  ldy #>PSDAT_0300
-  stya conductorPos
-  stya conductorSegnoLo
+  jsr pently_start_music
 
 nexttick:
-  jsr keyoff_ready_notes
   :
     lda TIMERVAL
     beq :-
-  jsr keyon_ready_notes
-  clc
-  lda music_tempoLo
-  adc tempo_counter
-  sta tempo_counter
-  lda music_tempoHi
-  adc tempo_counter+1
-  sta tempo_counter+1
-  bcc nexttick
-
-  ; New row time!
-  lda tempo_counter
-  sec
-  sbc #<(60 * TIMER_HZ)
-  sta tempo_counter
-  lda tempo_counter+1
-  sec
-  sbc #>(60 * TIMER_HZ)
-  sta tempo_counter+1
-
-  jsr play_conductor
-  ldx #7
-  :
-    jsr play_pattern_row
-    dex
-    bpl :-
+  jsr pently_update
   jmp nexttick
 
 .if 0
@@ -276,6 +171,129 @@ forever:
 .endif
 
 ; CONDUCTOR TRACK ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.proc pently_init
+  ldy #$7F
+  lda #DSP_LVOL  ; master volume left
+  stya DSPADDR
+  lda #DSP_RVOL  ; master volume right
+  stya DSPADDR
+
+  ; Disable the APU features we're not using
+  ldy #%00100000  ; mute off, echo write off, LFSR noise stop
+  lda #DSP_FLAGS
+  stya DSPADDR
+  ldy #$00
+  sty music_tempoLo
+  sty music_tempoHi
+  lda #DSP_KEYON  ; Clear key on
+  stya DSPADDR
+  lda #DSP_FMCH   ; Clear frequency modulation
+  stya DSPADDR
+
+  dey
+  lda #DSP_KEYOFF  ; Key off everything
+  stya DSPADDR
+  sty tempo_counter
+  sty tempo_counter+1
+  iny
+
+  lda #DSP_NOISECH  ; LFSR noise on no channels
+  stya DSPADDR
+  lda #DSP_ECHOCH  ; Echo on no channels
+  stya DSPADDR
+  lda #DSP_LECHOVOL  ; Left echo volume = 0
+  stya DSPADDR
+  lda #DSP_RECHOVOL  ; Right echo volume = 0
+  stya DSPADDR
+  
+  ; The DSP acts on KON and KOFF only once every two samples (1/16000
+  ; seconds or 64 cycles).  A key on or key off request must remain
+  ; set for at least 64 cycles, but key off must be cleared before
+  ; key on can be set again.  If key on is set while key off is set,
+  ; it'll immediately cut the note and possibly cause a pop.
+  ldx #7
+  lda #$FF
+:
+  sta <ready_notes,x
+  dex
+  bpl :-
+
+  lda #DSP_KEYOFF
+  stya DSPADDR
+  
+  lda #DSP_SAMPDIR  ; set sample directory start address
+  ldy #>sample_dir
+  stya DSPADDR
+
+  lda #8000/TIMER_HZ  ; S-Pently will use 125 Hz
+  sta TIMERPERIOD
+  lda #%10000001
+  sta TIMEREN
+  lda TIMERVAL
+  rts
+.endproc
+
+.proc pently_start_music
+  pha
+  ; Start the song
+  lda #<300
+  ldy #>300
+  stya music_tempoLo
+  lda #0
+  sta conductorWaitRows
+  ldx #7
+  initpatternloop:
+    lda #<silentPattern
+    sta <patternptrlo,x
+    lda #>silentPattern
+    sta <patternptrhi,x
+    lda #$FF
+    sta musicPattern,x
+    lda #0
+    sta <noteRowsLeft,x
+    dex
+    bpl initpatternloop
+
+  pla
+  lda #<PSDAT_0300
+  ldy #>PSDAT_0300
+  stya conductorPos
+  stya conductorSegnoLo
+  rts
+.endproc
+
+.proc pently_update
+  jsr keyon_ready_notes
+  clc
+  lda music_tempoLo
+  adc tempo_counter
+  sta tempo_counter
+  lda music_tempoHi
+  adc tempo_counter+1
+  sta tempo_counter+1
+  bcs is_next_row
+    rts
+  is_next_row:
+
+  ; New row time!
+  lda tempo_counter
+  sec
+  sbc #<(60 * TIMER_HZ)
+  sta tempo_counter
+  lda tempo_counter+1
+  sec
+  sbc #>(60 * TIMER_HZ)
+  sta tempo_counter+1
+
+  jsr play_conductor
+  ldx #7
+  :
+    jsr play_pattern_row
+    dex
+    bpl :-
+  jmp keyoff_ready_notes
+.endproc
 
 .proc play_conductor
   lda <conductorWaitRows

@@ -100,7 +100,7 @@ map.txt $(title).sfc: lorom256k.cfg $(objlisto)
 	$(PY) tools/fixchecksum.py $(title).sfc
 
 spcmap.txt $(title).spc: spc.cfg $(objlistospc)
-	$(LD65) -o $(title).spc -m map.txt -C $^
+	$(LD65) -o $(title).spc -m spcmap.txt -C $^
 
 $(objdir)/%.o: $(srcdir)/%.s $(srcdir)/snes.inc $(srcdir)/global.inc
 	$(AS65) $(CFLAGS65) $< -o $@
