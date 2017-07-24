@@ -54,13 +54,13 @@ map_mode        = $00FFD5
   lda #CPUIO_BASE
   tad              ; temporarily move direct page to S-CPU I/O area
   lda #$FF00
-  sta $00
-  stz $02
-  stz $04
-  stz $06
-  stz $08
-  stz $0A
-  stz $0C
+  sta $00     ; disable NMI and HVIRQ; don't drive controller port pin 6
+  stz $02     ; clear multiplier factors
+  stz $04     ; clear dividend
+  stz $06     ; clear divisor and low byte of hcount
+  stz $08     ; clear high bit of hcount and low byte of vcount
+  stz $0A     ; clear high bit of vcount and disable DMA copy
+  stz $0C     ; disable HDMA and fast ROM
 
   ; Initialize the PPU registers to predictable values
   lda #PPU_BASE
