@@ -48,7 +48,7 @@ def load_wave_as_mono_s16(filename):
                                  for i in range(0, len(data), n_ch)))
     return (freq, data)
 
-def save_wave_as_mono_u16(filename, freq, data):
+def save_wave_as_mono_s16(filename, freq, data):
     data = array.array('h', (min(max(s, -32767), 32767) for s in data))
     little = array.array('H', b'\x01\x00')[0] == 1
     if not little:
@@ -57,7 +57,7 @@ def save_wave_as_mono_u16(filename, freq, data):
         outfp.setnchannels(1)
         outfp.setsampwidth(2)
         outfp.setframerate(freq)
-        outfp.writeframes(data.tostring())
+        outfp.writeframes(data.tobytes())
 
 def brr_preemphasize(wavdata):
     """Emphasize a sample's highs to compensate for S-DSP Gaussian interpolation."""
@@ -250,7 +250,7 @@ def main(argv=None):
         out = decode_brr(brrdata)
         if not opts.skipfilter:
             out = brr_deemphasize(out)
-        save_wave_as_mono_u16(opts.outfilename, opts.rate, out)
+        save_wave_as_mono_s16(opts.outfilename, opts.rate, out)
     else:
         freq, wave = load_wave_as_mono_s16(opts.infilename)
         if not opts.skipfilter:

@@ -30,10 +30,10 @@ OAMHI: .res 512
   ; Because the INC and BIT instructions can't use 24-bit (f:)
   ; addresses, we need to set the data bank to one that can access
   ; low RAM ($0000-$1FFF) and the PPU ($2100-$213F) with a 16-bit
-  ; address.  Only banks $00-$3F and $80-$BF can do this, not $40-$7D
-  ; or $C0-$FF.  But in a LoROM program no larger than 16 Mbit, the
-  ; CODE segment is in a bank that can, so copy the data bank to the
-  ; program bank.
+  ; address.  Only banks $00-$3F, $7E, and $80-$BF can do this, not
+  ; $40-$7D or $C0-$FF.  But in a LoROM program no larger than
+  ; 16 Mbit, the CODE segment is in a bank that can, so copy the
+  ; data bank to the program bank.
   phb
   phk
   plb
@@ -42,7 +42,7 @@ OAMHI: .res 512
   inc a:nmis       ; Increase NMI count to notify main thread
   bit a:NMISTATUS  ; Acknowledge NMI
 
-  ; And restore the previous program bank value.
+  ; And restore the previous data bank value.
   plb
   rti
 .endproc
@@ -69,10 +69,12 @@ OAMHI: .res 512
   jsl load_bg_tiles  ; fill pattern table
   jsl draw_bg        ; fill nametable
   jsl load_player_tiles
-  
+
+  ; In LoROM no larger than 16 Mbit, all program banks can reach
+  ; the system area (low RAM, PPU ports, and DMA ports).
   phk
   plb
-  
+
   ; Program the PPU for the display mode
   seta8
   stz BGMODE     ; mode 0 (four 2-bit BGs) with 8x8 tiles
