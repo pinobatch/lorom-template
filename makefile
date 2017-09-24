@@ -37,7 +37,9 @@ imgdir := tilesets
 EMU := xterm -e zsnes -d
 
 # game-music-emu by blargg et al.
-SPCPLAY := gme_player
+# Using paplay-based wrapper from
+# https://forums.nesdev.com/viewtopic.php?f=6&t=16218
+SPCPLAY := gmeplay
 
 ifdef COMSPEC
 PY := py.exe

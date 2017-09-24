@@ -83,7 +83,7 @@ sample_dir:
 .align 256
 spc_entry:
   jsr pently_init
-  lda #0
+  lda #2
   jsr pently_start_music
 
 nexttick:
@@ -242,6 +242,20 @@ forever:
   stya music_tempoLo
   lda #0
   sta conductorWaitRows
+
+  pla
+  asl a
+  tax
+  lda pently_songs,x
+  sta conductorPos
+  sta conductorSegnoLo
+  lda pently_songs+1,x
+  sta conductorPos+1
+  sta conductorSegnoHi
+  ; falls through
+.endproc
+
+.proc pently_stop_all_tracks
   ldx #7
   initpatternloop:
     lda #<silentPattern
@@ -254,12 +268,6 @@ forever:
     sta <noteRowsLeft,x
     dex
     bpl initpatternloop
-
-  pla
-  lda #<PSDAT_0300
-  ldy #>PSDAT_0300
-  stya conductorPos
-  stya conductorSegnoLo
   rts
 .endproc
 
@@ -339,7 +347,7 @@ forever:
     sta <music_tempoHi
     sta <music_tempoLo
     ; Removed: dal segno callback
-    rts
+    jmp pently_stop_all_tracks
   @notFine:
 
   cmp #CON_SEGNO
@@ -721,6 +729,7 @@ one_shl_x:
 ; $05-$07: Not used yet
 .macro INST name, lvol, rvol, freqscale, samplenum, attack, decay, sustain, sustainlevel
 name = (* - music_inst_table) / 8
+.ident(.concat("PD_", .string(name))) = (* - music_inst_table)
   .assert (0 <= (lvol) && (lvol) <= 15), error, "left volume must be 0-15"
   .assert (0 <= (rvol) && (rvol) <= 15), error, "right volume must be 0-15"
   .assert (0 <= (rvol) && (rvol) <= 15), error, "right volume must be 0-15"
@@ -836,71 +845,154 @@ D_1  = 7
 
 ; Music data ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; TODO: Make a version of pentlyas.py that can output this format
+
 music_inst_table:
   ;    name         lv  rv frq smp att dec sus lvl
-  INST KICK,        12, 12,  3,  6, 31, 17,  0,  8
+  INST KICK,        14, 14,  3,  6, 31, 17,  0,  8
   INST SNARE,       10, 15,  3,  7, 31, 17,  0,  8
   INST HAT,          4,  8,  3,  5, 31, 17,  0,  8
-  INST PLING_8,      3, 15,  1,  0, 31, 19, 15,  2
-  INST PLING_4,     11, 11,  1,  1, 31, 19, 15,  2
+  INST PLING_8,      4, 11,  1,  0, 31, 19, 15,  2
+  INST PLING_4,      8,  8,  1,  1, 31, 19, 15,  2
   INST PLING_2,     10,  6,  1,  2, 31, 17, 15,  2
   INST BASSGUITAR,  12, 12,  1,  4, 31, 17, 15,  8
   INST BASSCLAR,    15,  3,  1,  2, 21, 21, 27,  4
 
 pently_patterns:
+  .addr PPDAT_0200_sq1, PPDAT_0200_sq2, PPDAT_0200_bass, PPDAT_0200_drums
+  ; pattern 4: cleared
+  .addr PPDAT_round_clear_sq1
+
 .addr PPDAT_0300_drum, PPDAT_0300_bass1, PPDAT_0300_bass2, PPDAT_0300_sq2_1
 .addr PPDAT_0300_sq1_1, PPDAT_0300_sq2_2
 
 pently_songs:
-.addr PSDAT_0300
+.addr PSDAT_0200, PSDAT_round_clear, PSDAT_0300
+
+
+;____________________________________________________________________
+; 2am theme
+; This is the famous first eight bars of the second movement of
+; Beethoven's "Pathetique" done in 9/8 like ACWW 2am.
+
+PSDAT_0200:
+  setTempo 300
+  playPat 0, 0, 24, 4
+  playPat 1, 1, 24, 4
+  playPat 2, 2, 12, 4
+  waitRows 36
+  playDrumPat 3, 3
+  waitRows 144
+  dalSegno
+
+PPDAT_0200_sq1:
+  .byt REST|D_D8, N_GS|D_D4, REST|D_D8, N_FS|D_D4
+  .byt REST|D_D8, N_GS|D_D4, REST|D_D8, N_FS|D_D4
+  .byt REST|D_D8, N_GS|D_D4, REST|D_D8, N_FS|D_D4
+  .byt REST|D_D8, N_GS|D_D4, REST|D_D8, N_FS|D_D4
+  .byt REST|D_D8, N_A|D_D4, REST|D_D8, N_B|D_D8, N_DSH|D_D8
+  .byt REST|D_D8, N_GS|D_D4, REST|D_D8, N_GS|D_D4
+  .byt REST|D_D8, N_GS|D_D4, REST|D_D8, N_GS|D_D4
+  .byt REST|D_D8, N_A|D_D4, REST|D_D8, N_E|D_D4
+  .byt REST|D_D8, N_FS|D_D4, REST|D_D8, N_D|D_D4
+  .byt REST|D_D8, N_D|D_D4, REST|D_D8, N_CS|D_D4
+  .byt 255
+
+PPDAT_0200_sq2:
+  .byt REST|D_D8, N_CSH|D_D4, REST|D_D8, N_B|D_D4
+  .byt REST|D_D8, N_CSH|D_D4, REST|D_D8, N_B|D_D4
+  .byt N_CSH|D_2, REST, N_B|D_2, REST
+  .byt N_EH|D_2, N_TIE, REST|D_D4, N_DH|D_D8
+  .byt N_CSH|D_4, N_TIE, N_EH|D_4, N_AH|D_D8, N_BH|D_D4
+  .byt N_EH|D_2, N_TIE, REST|D_D4, N_FH|D_D8
+  .byt N_FSH|D_2, REST, N_B|D_D4, N_CSH|D_8, N_DH
+  .byt N_EH|D_2, REST, N_AS|D_2, REST
+  .byt N_DH|D_2, REST, N_CSH|D_8, N_B|D_D8, N_A|D_D8, N_GS
+  .byt N_B|D_2, REST, N_A|D_2, REST
+  .byt 255
+
+PPDAT_0200_bass:
+  .byt N_A|D_2, REST, N_G|D_2, REST
+  .byt N_A|D_2, REST, N_G|D_2, REST
+  .byt N_A|D_2, REST, N_G|D_2, REST
+  .byt N_A|D_2, REST, N_G|D_2, REST
+  .byt N_FS|D_2, REST, N_B|D_2, REST
+  .byt N_E|D_2, REST, N_E|D_2, REST
+  .byt N_DH|D_2, REST, N_DH|D_2, REST
+  .byt N_CSH|D_2, REST, N_FS|D_2, REST
+  .byt N_B|D_2, REST, N_E|D_2, REST
+  .byt N_A|D_2, REST, N_A|D_2, REST
+  .byt 255
+
+PPDAT_0200_drums:
+  .byt PD_KICK|D_D8, PD_HAT|D_8, PD_HAT, PD_HAT|D_D8, PD_SNARE|D_D8, PD_HAT|D_D4
+  .byt 255
+
+
+
+;____________________________________________________________________
+; 3am theme
 
 PSDAT_0300:
-  playDrumPat 0, 0
-  playPat 3, 1, 0, BASSCLAR
+  playDrumPat 0, 5
+  playPat 3, 6, 0, BASSCLAR
   waitRows 48
-  playPat 1, 3, 24, PLING_2
-  playPat 2, 4, 24, PLING_2
+  playPat 1, 8, 24, PLING_2
+  playPat 2, 9, 24, PLING_2
   waitRows 96
-  playPat 3, 2, 0, BASSCLAR
-  playPat 1, 5, 19, PLING_2
-  playPat 2, 5, 24, PLING_2
+  playPat 3, 7, 0, BASSCLAR
+  playPat 1, 10, 19, PLING_2
+  playPat 2, 10, 24, PLING_2
   waitRows 96
   stopPat 1
   stopPat 2
   dalSegno
-  dalSegno
 
 PPDAT_0300_drum:
-.byte $02,$11,$00,$09,$10,$11,$10
-.byte $01,$10,$11,$00,$0A,$12
-.byte PATEND
+  .byt PD_KICK|D_D8, PD_HAT|D_8, PD_KICK, PD_SNARE|D_8, PD_HAT, PD_HAT|D_8, PD_HAT
+  .byt PD_KICK|D_8, PD_HAT, PD_HAT|D_8, PD_KICK, PD_SNARE|D_D8, PD_HAT|D_D8
+  .byt PATEND
 
 PPDAT_0300_bass1:
   .byt N_E|D_8, REST, N_EH|D_8, N_E|D_8, REST, N_EH|D_8, REST|D_8
   .byt REST|D_D2
   .byt N_A|D_8, REST, N_AH|D_8, N_A|D_8, REST, N_AH|D_8, REST|D_8
   .byt REST|D_D2
-  .byt 255
+  .byt PATEND
 
 PPDAT_0300_bass2:
   .byt N_B|D_8, REST, N_BH|D_8, N_B|D_8, REST, N_BH|D_8, REST|D_8
   .byt REST|D_D2
   .byt N_A|D_8, REST, N_AH|D_8, N_A|D_8, REST, N_AH|D_8, REST|D_8
   .byt REST|D_D2
-  .byt 255
+  .byt PATEND
 
 PPDAT_0300_sq2_1:
   .byt N_EH|D_D2, N_DH|D_D2, N_CSH|D_D2, N_CH|D_D2
-  .byt 255
+  .byt PATEND
 
 PPDAT_0300_sq1_1:
   .byt N_CSH|D_D2, N_B|D_D2, N_A|D_D2, N_G|D_D2
-  .byt 255
+  .byt PATEND
 
 PPDAT_0300_sq2_2:
   .byt REST|D_D8, N_B|D_4, N_TIE, N_DH|D_4
   .byt N_CSH|D_4, N_TIE, N_A|D_4, N_TIE|D_D8
   .byt REST|D_D8, N_A|D_4, N_TIE, N_CH|D_4
   .byt N_B|D_4, N_TIE, N_G|D_4, N_TIE|D_D8
-  .byt 255
+  .byt PATEND
 
+
+;____________________________________________________________________
+; round cleared theme
+
+PSDAT_round_clear:
+  setTempo 60
+  playPat 0, 4, 12, PLING_2
+  playPat 1, 4, 21, PLING_2
+  waitRows 5
+  fine
+
+PPDAT_round_clear_sq1:
+  .byt N_F, N_A, N_G, N_C|D_8
+  .byt 255

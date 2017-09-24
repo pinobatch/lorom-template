@@ -28,12 +28,12 @@ OAMHI: .res 512
 ; to the main thread that NMI has occurred.
 .proc nmi_handler
   ; Because the INC and BIT instructions can't use 24-bit (f:)
-  ; addresses, we need to set the data bank to one that can access
-  ; low RAM ($0000-$1FFF) and the PPU ($2100-$213F) with a 16-bit
-  ; address.  Only banks $00-$3F, $7E, and $80-$BF can do this, not
-  ; $40-$7D or $C0-$FF.  But in a LoROM program no larger than
-  ; 16 Mbit, the CODE segment is in a bank that can, so copy the
-  ; data bank to the program bank.
+  ; addresses, set the data bank to one that can access low RAM
+  ; ($0000-$1FFF) and the PPU ($2100-$213F) with a 16-bit address.
+  ; Only banks $00-$3F and $80-$BF can do this, not $40-$7D or
+  ; $C0-$FF.  ($7E can access low RAM but not the PPU.)  But in a
+  ; LoROM program no larger than 16 Mbit, the CODE segment is in a
+  ; bank that can, so copy the data bank to the program bank.
   phb
   phk
   plb
