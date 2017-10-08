@@ -83,7 +83,7 @@ sample_dir:
 .align 256
 spc_entry:
   jsr pently_init
-  lda #2
+  lda #0
   jsr pently_start_music
 
 nexttick:
@@ -92,83 +92,6 @@ nexttick:
     beq :-
   jsr pently_update
   jmp nexttick
-
-.if 0
-  ; the old part
-  
-  ; Play the first note
-  lda #PLING_2
-  sta noteInstrument+1
-  lda #1*12+10
-  sta ready_notes+1
-  jsr keyon_ready_notes
-
-  ldx #12
-:
-  lda TIMERVAL
-  beq :-
-  dex
-  bne :-
-
-  lda #PLING_8
-  sta noteInstrument+0
-  ldy #3*12+2
-  sty ready_notes+0
-  lda #BASSGUITAR
-  sta noteInstrument+2
-  ldy #0*12+10
-  sty ready_notes+2
-  jsr keyon_ready_notes
-
-  ldx #62
-:
-  lda TIMERVAL
-  beq :-
-  dex
-  bne :-
-
-  lda #KICK
-  sta noteInstrument+4
-  lda #2*12+0
-  sta ready_notes+4
-  jsr keyon_ready_notes
-
-  ; make your selection now
-  lda #DSP_CLVOL|$30
-  ldy #127
-  stya DSPADDR
-  lda #DSP_CRVOL|$30
-  ldy #127
-  stya DSPADDR
-  lda #DSP_CFREQLO|$30
-  ldy #$00
-  stya DSPADDR
-  lda #DSP_CFREQHI|$30
-  ldy #$08
-  stya DSPADDR
-  lda #DSP_CSAMPNUM|$30
-  ldy #$05
-  stya DSPADDR
-  lda #DSP_CATTACK|$30
-  ldy #$00
-  stya DSPADDR
-  lda #DSP_CGAIN|$30
-  ldy #$4F
-  stya DSPADDR
-
-  ldx #50
-:
-  lda TIMERVAL
-  beq :-
-  dex
-  bne :-
-  lda #DSP_KEYON
-  ldy #%00001000  ; channel 3
-  stya DSPADDR
-
-forever:
-  jmp forever
-.endif
 
 ; CONDUCTOR TRACK ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -471,7 +394,7 @@ anotherPatternByte:
     inc patternptr+1
   :
 
-  cmp #$D8
+  cmp #INSTRUMENT
   bcc isNoteCmd
     ; TODO: Handle effects
     jmp anotherPatternByte
@@ -490,6 +413,8 @@ anotherPatternByte:
   bcc isNoteOn
   beq skipNote
     ; TODO: Handle noteoff
+    lda #$7F
+    sta <ready_notes,x
     jmp skipNote
   isNoteOn:
   
@@ -648,9 +573,10 @@ unready_chs = $07
 unready_chs = $07
   ldx #7
   loop:
-    ; Bit 7 of ready_notes is 1 for no keyoff or 0 for keyoff.
+    ; Bit 7 of ready_notes is 1 for no keyon or 0 for keyon.
+    ; $78-$7F are invalid notes used to key off without keying on.
     lda ready_notes,x
-    asl a
+    cmp #$78
     bcs not_ready
       lda noteInstrument,x
       jsr ch_set_inst
@@ -660,12 +586,13 @@ unready_chs = $07
       pla
       jsr ch_set_pitch
 
-      ; Acknowledge key on
-      lda #$FF
-      sta ready_notes,x
       clc
     not_ready:
     rol unready_chs
+
+    ; Acknowledge key on
+    lda #$FF
+    sta ready_notes,x
     dex
     bpl loop
   lda #DSP_KEYOFF
@@ -849,9 +776,9 @@ D_1  = 7
 
 music_inst_table:
   ;    name         lv  rv frq smp att dec sus lvl
-  INST KICK,        14, 14,  3,  6, 31, 17,  0,  8
+  INST KICK,        13, 13,  3,  6, 31, 17,  0,  8
   INST SNARE,       10, 15,  3,  7, 31, 17,  0,  8
-  INST HAT,          4,  8,  3,  5, 31, 17,  0,  8
+  INST HAT,          3,  6,  3,  5, 31, 17,  0,  8
   INST PLING_8,      4, 11,  1,  0, 31, 19, 15,  2
   INST PLING_4,      8,  8,  1,  1, 31, 19, 15,  2
   INST PLING_2,     10,  6,  1,  2, 31, 17, 15,  2
@@ -927,8 +854,6 @@ PPDAT_0200_bass:
 PPDAT_0200_drums:
   .byt PD_KICK|D_D8, PD_HAT|D_8, PD_HAT, PD_HAT|D_D8, PD_SNARE|D_D8, PD_HAT|D_D4
   .byt 255
-
-
 
 ;____________________________________________________________________
 ; 3am theme
