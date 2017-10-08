@@ -8,7 +8,7 @@ Entertainment System using the LoROM (mode $20) mapper.
 
 Concepts illustrated:
 
-* internal header and init code
+* internal header (with correct checksum) and init code
 * setting up a static background
 * loading data from multiple 32 KiB banks in a LoROM
 * structure of a game loop
@@ -18,17 +18,18 @@ Concepts illustrated:
 * sprite drawing and animation, with horizontal flipping
 * makefile-controlled conversion of graphics to tile data in
   both 2-bit-per-pixel and 4-bit-per-pixel formats
-* booting the SPC700 audio CPU
+* booting the S-SMP (SPC700 audio CPU)
 * writing SPC700 code using 65C02 syntax using blargg's
   [SPC700 macro pack] for ca65
-* basic use of SPC700 timers to control playback
+* use of SPC700 timers to control playback
+* reading a sequence of pitches and converting them to frequencies
 * makefile-controlled compression of sampled sound to BRR format
 * creating an SPC700 state file for SPC music players
 
 Concepts not illustrated:
 
-* checksum in internal header (yet)
 * a 512-byte header for obsolete floppy-based copiers
+* S-CPU/S-SMP communication to play sound effects or change songs
 
 [SPC700 macro pack]: http://forums.nesdev.com/viewtopic.php?p=121690#p121690
 
@@ -87,6 +88,7 @@ to run these programs whenever the original asset data changes.
   by the S-DSP (the audio chip in the Super NES).
 * `karplus.py` generates a plucked string sound, used for the
   bass sample.
+* `hihat.py` generates a noise sample.
 
 Greets
 ------
@@ -102,12 +104,28 @@ Greets
 
 Legal
 -----
-The demo is distributed under the following license, based on the
-GNU All-Permissive License:
+The demo is distributed under the zlib License, reproduced below:
 
-> Copyright 2014-2016 Damian Yerrick
+> Copyright 2017 Damian Yerrick
 > 
-> Copying and distribution of this file, with or without
-> modification, are permitted in any medium without royalty provided
-> the copyright notice and this notice are preserved in all source
-> code copies.  This file is offered as-is, without any warranty.
+> This software is provided 'as-is', without any express or implied
+> warranty.  In no event will the authors be held liable for any
+> damages arising from the use of this software.
+> 
+> Permission is granted to anyone to use this software for any
+> purpose, including commercial applications, and to alter it and
+> redistribute it freely, subject to the following restrictions:
+> 
+> 1. The origin of this software must not be misrepresented; you must
+>    not claim that you wrote the original software. If you use this
+>    software in a product, an acknowledgment in the product
+>    documentation would be appreciated but is not required.
+> 
+> 2. Altered source versions must be plainly marked as such, and must
+>    not be misrepresented as being the original software.
+> 
+> 3. This notice may not be removed or altered from any source
+>    distribution.
+
+A work's "source" form is the preferred form of a work for making
+modifications to it.
