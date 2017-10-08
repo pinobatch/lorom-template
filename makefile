@@ -17,9 +17,9 @@ version = 0.06
 # (use a backslash to continue on the next line)
 objlist = \
   snesheader init main bg player \
-  ppuclear blarggapu spcimage
+  ppuclear blarggapu spcimage musicseq
 objlistspc = \
-  spcheader spcimage
+  spcheader spcimage musicseq
 brrlist = \
   karplusbassloop hat kickgen decentsnare
 
@@ -113,12 +113,13 @@ $(objdir)/%.o: $(objdir)/%.s
 $(objdir)/mktables.s: tools/mktables.py
 	$< > $@
 
-# Files that depend on .incbin'd files
+# Files that depend on extra included files
 $(objdir)/bg.o: \
  $(objdir)/bggfx.chrgb
 $(objdir)/player.o: \
  $(objdir)/swinging2.chrsfc
 $(objdir)/spcimage.o: $(brrlisto)
+$(objdir)/musicseq.o $(objdir)/spcimage.o: src/pentlyseq.inc
 
 # Rules for CHR data
 
