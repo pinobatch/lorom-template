@@ -49,12 +49,17 @@ koff_ready: .res 1
 ready_notes: .res 8
 noteInstrument: .res 8
 
+
 patternptrlo: .res 8
 patternptrhi: .res 8
 noteRowsLeft: .res 8
 musicPattern: .res 8
 patternTranspose: .res 8
 noteLegato: .res 8
+
+; Effects remaining to implement
+channelVolume: .res 8
+graceTime: .res 8
 
 music_tempoLo: .res 1
 music_tempoHi: .res 1
@@ -197,6 +202,10 @@ nexttick:
 
 .proc pently_update
   jsr keyon_ready_notes
+  
+  ; TODO: figure out something for sound effects
+
+  ; Bresenham accumulator for next row
   clc
   lda music_tempoLo
   adc tempo_counter
@@ -221,7 +230,7 @@ nexttick:
   jsr play_conductor
   ldx #7
   :
-    jsr play_pattern_row
+    jsr processTrackPattern
     dex
     bpl :-
   jmp keyoff_ready_notes
@@ -262,6 +271,7 @@ nexttick:
 
   ; Removed: attack track
   ; Removed for now: note on
+  ; TODO: Restore note on
 
   @notAttackSet:
 
@@ -295,15 +305,19 @@ nexttick:
   rts
 
 conductorPlayPattern:
+  ; Fortunately we can store channels' fields adjacently because
+  ; they're 16 bytes apart in the DSP, and the SPC700 has a nibble
+  ; swap instruction.
   and #$07
   tax
 
   ; Removed handling for attack track, as S-DSP doesn't really
-  ; support restarting a note already in progress
+  ; support restarting a note already in progress.  One can switch
+  ; to the other note's sample, but that doesn't take effect until
+  ; the current sample's loop point, unlike pitch that takes effect
+  ; immediately, and ADSR that I haven't really researched yet.
   lda #0
   sta <noteLegato,x  ; start all patterns with legato off
-  skipClearLegato:
-  sta <noteRowsLeft,x
   lda (<conductorPos),y
   sta <musicPattern,x
   iny
@@ -340,7 +354,8 @@ durations: .byte 1, 2, 3, 4, 6, 8, 12, 16
 
 .proc startPattern
   lda #0
-  sta noteRowsLeft,x
+  sta graceTime,x
+  sta <noteRowsLeft,x
   lda musicPattern,x
   cmp #PATEND
   bcc @notSilentPattern
@@ -366,7 +381,7 @@ durations: .byte 1, 2, 3, 4, 6, 8, 12, 16
   rts
 .endproc
 
-.proc play_pattern_row
+.proc processTrackPattern
 patternptr = $00
 
   lda noteRowsLeft,x
@@ -397,6 +412,8 @@ anotherPatternByte:
 
   cmp #INSTRUMENT
   bcs isEffectCmd
+
+  ; Set the note's duration
   pha
   and #$07
   tay
@@ -407,13 +424,13 @@ anotherPatternByte:
   lsr a
   lsr a
   cmp #25
-  bcc isNoteOn
+  bcc isTransposedNote
   beq skipNote
-    ; TODO: Handle noteoff
+    ; $7F: Note off
     lda #$7F
     sta <ready_notes,x
-    jmp skipNote
-  isNoteOn:
+    bra skipNote
+  isTransposedNote:
   
   ldy <patternTranspose,x
   bpl noteOnNotDrum
@@ -421,11 +438,11 @@ anotherPatternByte:
     ; Drum mode: play a middle C with instrument X
     sta <noteInstrument,x
     lda #2*12+0
-    sta <ready_notes,x
-    bra skipNote
+    bra have_notenum
   noteOnNotDrum:
   clc
   adc <patternTranspose,x
+have_notenum:
   sta <ready_notes,x  ; Using previous instrument
 
 skipNote:
@@ -445,21 +462,41 @@ isEffectCmd:
   cmp #NUM_EFFECTS
   bcs anotherPatternByte
   tay
-  lda effect_handlers+1,y
+  lda patcmdhandlers+1,y
   pha
-  lda effect_handlers,y
+  lda patcmdhandlers,y
   pha
   rts
 
 ; An authentic 6502 adds 2 to PC in JSR and 1 in RTS.
 ; The SPC700 instead adds 3 in JSR and 0 in RTS.
 ; This means we push without -1.
-; Each effect is called with the effect number times 2 in Y.
-effect_handlers:
-  .addr effect_instrument
-NUM_EFFECTS = (* - effect_handlers) / 2
+; Each effect is called with carry clear and the effect number
+; times 2 in Y.
+patcmdhandlers:
+  .addr set_fx_instrument
+  .addr set_fx_arpeggio
+  .addr set_fx_legato
+  .addr set_fx_legato
+  .addr set_fx_transpose-1
+  .addr set_fx_grace-1
+  .addr set_fx_vibrato-1
+  .addr set_fx_ch_volume-1
 
-effect_instrument:
+  .addr set_fx_portamento-1
+  .addr set_fx_portamento-1  ; Reserved for future use
+  .addr set_fx_fastarp-1
+  .addr set_fx_slowarp-1
+NUM_EFFECTS = (* - patcmdhandlers) / 2
+
+; These effects don't exist yet in S-Pently
+  set_fx_arpeggio = nextPatternByte
+  set_fx_vibrato = anotherPatternByte
+  set_fx_portamento = anotherPatternByte
+  set_fx_fastarp = anotherPatternByte
+  set_fx_slowarp = anotherPatternByte
+
+set_fx_instrument:
   ldy #0
   lda (patternptr),y
   sta noteInstrument,x
@@ -471,10 +508,37 @@ nextPatternByte:
   :
   jmp anotherPatternByte
 
+set_fx_legato:
+  tya
+  and #$02
+  sta noteLegato,x
+  jmp anotherPatternByte
+
+set_fx_grace:
+  ldy #0
+  lda (patternptr),y
+  asl a
+  sta graceTime,x
+  jmp nextPatternByte
+
+set_fx_transpose:
+  lda patternTranspose,x
+  ldy #0
+  adc (patternptr),y
+  sta patternTranspose,x
+  jmp nextPatternByte
+
+set_fx_ch_volume:
+  ldy #0
+  lda (patternptr),y
+  sta channelVolume,x
+  jmp nextPatternByte
 
 .endproc
 
 silentPattern: .byte $D7, $FF
+
+; S-Pently alignment audit 2018-03-20: Down to pentlymusic.s line 724
 
 ; PLAYING NOTES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
