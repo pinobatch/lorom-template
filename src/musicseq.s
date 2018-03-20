@@ -7,7 +7,7 @@
 
 music_inst_table:
   ;    name         lv  rv frq smp att dec sus lvl
-  INST KICK,        12, 12,  3,  6, 31, 17,  0,  8
+  INST KICK,        11, 10,  3,  6, 31, 17,  0,  8
   INST SNARE,       10, 15,  3,  7, 31, 17,  0,  8
   INST HAT,          3,  5,  3,  5, 31, 17,  0,  8
   INST PLING_8,      3, 10,  1,  0, 31, 19, 15,  2
@@ -31,8 +31,9 @@ pently_patterns:
   .addr PPDAT_0400_sq1, PPDAT_0400_sq2, PPDAT_0400_drums, PPDAT_0400_drums_2
   ; patterns 15-18: 4 PM
   .addr PPDAT_1600__sq1, PPDAT_1600__sq2, PPDAT_1600__tri, PPDAT_1600__drums
-  ; patterns 19-21: 5 AM
+  ; patterns 19-22: 5 AM
   .addr PPDAT_0500_sqloop, PPDAT_0500_triloop, PPDAT_0500_melody
+  .addr PPDAT_restore_vol
 
 pently_songs:
 .addr PSDAT_0500, PSDAT_0200, PSDAT_0300, PSDAT_0400, PSDAT_round_clear, PSDAT_1600
@@ -204,10 +205,17 @@ PSDAT_0500:
   waitRows 96
   playPat 4, 21, 24, XYLMED
   playPat 3, 20, 0, BASSCLAR
-  waitRows 192
+  waitRows 190
+  playPat 2, 22, 24, PLING_4
+  playPat 1, 22, 19, PLING_4
+  waitRows 2
   stopPat 3
   stopPat 4
   dalSegno
+
+PPDAT_restore_vol:
+  .byt CHVOLUME, 4, REST|D_D2
+  .byt PATEND
 
 PPDAT_0500_sqloop:
   .byt INSTRUMENT, PLING_4
@@ -219,7 +227,7 @@ PPDAT_0500_sqloop:
   .byt REST|D_8, N_E, N_A|D_8, N_B, N_CSH|D_8, REST, N_B|D_8, N_G|D_8
   .byt INSTRUMENT, PLING_8
   .byt REST, N_E, N_A|D_8, N_B, N_CSH|D_8, REST, N_B|D_8, N_G|D_8
-  .byt REST, REST|D_D4, REST|D_1
+  .byt REST, REST|D_D4, CHVOLUME, 3, REST|D_1
   .byt PATEND
 PPDAT_0500_triloop:
   .byt N_A|D_8, REST, N_G|D_8, N_FS|D_8, REST, N_G|D_8, REST|D_2

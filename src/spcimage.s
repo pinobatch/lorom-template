@@ -60,6 +60,7 @@ noteLegato: .res 8
 ; Effects remaining to implement
 channelVolume: .res 8
 graceTime: .res 8
+defaultGraceTime: .res 8
 
 music_tempoLo: .res 1
 music_tempoHi: .res 1
@@ -69,7 +70,9 @@ conductorSegnoLo: .res 1
 conductorSegnoHi: .res 1
 conductorWaitRows: .res 1
 
+NUM_CHANNELS = 8
 TIMER_HZ = 125
+MAX_CHANNEL_VOLUME = 4
 
 .segment "SPCIMAGE"
 .align 256
@@ -141,12 +144,12 @@ nexttick:
   ; set for at least 64 cycles, but key off must be cleared before
   ; key on can be set again.  If key on is set while key off is set,
   ; it'll immediately cut the note and possibly cause a pop.
-  ldx #7
+  ldx #NUM_CHANNELS - 1
   lda #$FF
-:
-  sta <ready_notes,x
-  dex
-  bpl :-
+  :
+    sta <ready_notes,x
+    dex
+    bpl :-
 
   lda #DSP_KEYOFF
   stya DSPADDR
@@ -185,16 +188,23 @@ nexttick:
 .endproc
 
 .proc pently_stop_all_tracks
-  ldx #7
+  ldx #NUM_CHANNELS - 1
   initpatternloop:
     lda #<silentPattern
     sta <patternptrlo,x
     lda #>silentPattern
     sta <patternptrhi,x
     lda #$FF
-    sta musicPattern,x
+    sta <musicPattern,x
     lda #0
     sta <noteRowsLeft,x
+    sta <noteLegato,x
+    txa
+    and #$01
+    sta <defaultGraceTime,x
+    sta <graceTime,x
+    lda #MAX_CHANNEL_VOLUME
+    sta <channelVolume,x
     dex
     bpl initpatternloop
   rts
@@ -205,6 +215,8 @@ nexttick:
   
   ; TODO: figure out something for sound effects
 
+  ; TODO: figure out something for grace time
+
   ; Bresenham accumulator for next row
   clc
   lda music_tempoLo
@@ -213,9 +225,7 @@ nexttick:
   lda music_tempoHi
   adc tempo_counter+1
   sta tempo_counter+1
-  bcs is_next_row
-    rts
-  is_next_row:
+  bcc between_rows
 
   ; New row time!
   lda tempo_counter
@@ -228,9 +238,30 @@ nexttick:
   sta tempo_counter+1
 
   jsr play_conductor
-  ldx #7
+  ldx #NUM_CHANNELS - 1
   :
-    jsr processTrackPattern
+    lda defaultGraceTime,x
+    sta graceTime,x
+    bne nr_notGraceTime
+      jsr processTrackPattern
+    nr_notGraceTime:
+    dex
+    bpl :-
+  jmp keyoff_ready_notes
+
+between_rows:
+  ldx #NUM_CHANNELS - 1
+  :
+.if 1
+    lda graceTime,x
+    beq br_notGraceTime
+    sec
+    sbc #1
+    sta graceTime,x
+    bne br_notGraceTime
+      jsr processTrackPattern
+.endif
+    br_notGraceTime:
     dex
     bpl :-
   jmp keyoff_ready_notes
@@ -353,11 +384,12 @@ conductorDoWaitRows:
 durations: .byte 1, 2, 3, 4, 6, 8, 12, 16
 
 .proc startPattern
+  lda <defaultGraceTime,x
+  sta <graceTime,x
   lda #0
-  sta graceTime,x
   sta <noteRowsLeft,x
-  lda musicPattern,x
-  cmp #PATEND
+  lda <musicPattern,x
+  cmp #$FF
   bcc @notSilentPattern
     lda #<silentPattern
     sta <patternptrlo,x
@@ -403,6 +435,8 @@ anotherPatternByte:
   cmp #$FF
   bcc notStartPatternOver
     jsr startPattern
+    lda #0
+    sta graceTime,x
     bra notWaitingRows
   notStartPatternOver:
   inc patternptr
@@ -446,21 +480,22 @@ have_notenum:
   sta <ready_notes,x  ; Using previous instrument
 
 skipNote:
-  lda noteRowsLeft,x
+  lda <noteRowsLeft,x
   sec
   sbc #1
-  sta noteRowsLeft,x
+  sta <noteRowsLeft,x
 patDone:
-  lda patternptr
-  sta patternptrlo,x
-  lda patternptr+1
-  sta patternptrhi,x
+  lda <patternptr
+  sta <patternptrlo,x
+  lda <patternptr+1
+  sta <patternptrhi,x
   rts
 
 isEffectCmd:
   sbc #INSTRUMENT
   cmp #NUM_EFFECTS
   bcs anotherPatternByte
+  asl a
   tay
   lda patcmdhandlers+1,y
   pha
@@ -478,15 +513,15 @@ patcmdhandlers:
   .addr set_fx_arpeggio
   .addr set_fx_legato
   .addr set_fx_legato
-  .addr set_fx_transpose-1
-  .addr set_fx_grace-1
-  .addr set_fx_vibrato-1
-  .addr set_fx_ch_volume-1
+  .addr set_fx_transpose
+  .addr set_fx_grace
+  .addr set_fx_vibrato
+  .addr set_fx_ch_volume
 
-  .addr set_fx_portamento-1
-  .addr set_fx_portamento-1  ; Reserved for future use
-  .addr set_fx_fastarp-1
-  .addr set_fx_slowarp-1
+  .addr set_fx_portamento
+  .addr set_fx_portamento  ; Reserved for future use
+  .addr set_fx_fastarp
+  .addr set_fx_slowarp
 NUM_EFFECTS = (* - patcmdhandlers) / 2
 
 ; These effects don't exist yet in S-Pently
@@ -531,9 +566,8 @@ set_fx_transpose:
 set_fx_ch_volume:
   ldy #0
   lda (patternptr),y
-  sta channelVolume,x
+  sta <channelVolume,x
   jmp nextPatternByte
-
 .endproc
 
 silentPattern: .byte $D7, $FF
@@ -584,10 +618,11 @@ octave_done:
 ; Sets volume, sample ID, and envelope of channel X to instrument A.
 ; @param X channel number (0-7)
 ; @param A instrument number
-; @return $02: pointer to instrument; A: instrument's pitch scale;
-; Y trashed; X preserved
+; @return $02: pointer to instrument; $04: channel volume;
+; A: instrument's pitch scale; Y trashed; X preserved
 .proc ch_set_inst
 instptr = $02
+chvolalt = $04
   ldy #8
   mul ya
   clc
@@ -604,19 +639,21 @@ instptr = $02
   ldy #0
   lda (instptr),y
   pha
-  ora #$0F
-  ldy #127  ; FIXME: use channel volume
+  xcn a
+  and #$0F  ; 0 to 15
+  ldy <channelVolume,x  ; 0 to 4
   mul ya
-  sty DSPDATA
+  asl a
+  sta DSPDATA
 
   ; Set right channel volume
   inc DSPADDR
   pla
-  xcn a
-  ora #$0F
-  ldy #127  ; FIXME: use channel volume
+  and #$0F
+  ldy <channelVolume,x
   mul ya
-  sty DSPDATA
+  asl a
+  sta DSPDATA
 
   ; Set sample ID and envelope
   lda DSPADDR
@@ -647,7 +684,7 @@ instptr = $02
 ; So find which voices are ready for key off and on, and do so.
 .proc keyoff_ready_notes
 unready_chs = $07
-  ldx #7
+  ldx #NUM_CHANNELS - 1
   loop:
     ; Bit 7 of ready_notes is 1 for no keyoff or 0 for keyoff.
     lda ready_notes,x
@@ -665,7 +702,7 @@ unready_chs = $07
 
 .proc keyon_ready_notes
 unready_chs = $07
-  ldx #7
+  ldx #NUM_CHANNELS - 1
   loop:
     ; Bit 7 of ready_notes is 1 for no keyon or 0 for keyon.
     ; $78-$7F are invalid notes used to key off without keying on.
