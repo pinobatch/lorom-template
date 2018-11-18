@@ -30,11 +30,13 @@ objdir := obj/snes
 srcdir := src
 imgdir := tilesets
 
-# if it's not bsnes, it's just BS
-#EMU := bsnes
-
-# But being stuck on an Atom laptop is BS
-EMU := xterm -e zsnes -d
+# If it's not bsnes, it's just BS.  But I acknowledge that being
+# stuck on an old Atom laptop is BS.  Atom N450 can't run bsnes at
+# full speed, but the Atom-based Pentium N3710 can.
+ifndef SNESEMU
+#SNESEMU := xterm -e zsnes -d
+SNESEMU := bsnes
+endif
 
 # game-music-emu by blargg et al.
 # Using paplay-based wrapper from
@@ -51,6 +53,7 @@ endif
 # yep, that's 8 backslashes.  Apparently, there are 3 layers of escaping:
 # one for the shell that executes sed, one for sed, and one for the shell
 # that executes wine
+# TODO: convert to use winepath -w
 wincwd := $(shell pwd | sed -e "s'/'\\\\\\\\'g")
 
 # .PHONY means these targets aren't actual filenames
@@ -60,7 +63,7 @@ wincwd := $(shell pwd | sed -e "s'/'\\\\\\\\'g")
 # to build the first target.  So unless you're trying to run
 # NO$SNS in Wine, you should move run above nocash-run.
 run: $(title).sfc
-	$(EMU) $<
+	$(SNESEMU) $<
 
 # Per Martin Korth on 2014-09-16: NO$SNS requires absolute
 # paths because he screwed up and made the filename processing
@@ -81,12 +84,15 @@ clean:
 dist: zip
 zip: $(title)-$(version).zip
 $(title)-$(version).zip: zip.in all README.md $(objdir)/index.txt
-	zip -9 -u $@ -@ < $<
+	$(PY) tools/zipup.py $< $(title)-$(version) -o $@
+	-advzip -z3 $@
 
 # Build zip.in from the list of files in the Git tree
 zip.in:
 	git ls-files | grep -e "^[^.]" > $@
 	echo zip.in >> $@
+	echo $(title).sfc >> $@
+	echo $(title).spc >> $@
 
 $(objdir)/index.txt: makefile
 	echo "Files produced by build tools go here. (This file's existence forces the unzip tool to create this folder.)" > $@

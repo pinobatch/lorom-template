@@ -9,6 +9,9 @@
 /zip.in
 /map.txt
 /spcmap.txt
+/lorom-template.sfc
+/lorom-template.spc
+/lorom-template-*.zip
 __pycache__/
 *.pyc
 
