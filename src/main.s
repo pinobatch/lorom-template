@@ -5,6 +5,7 @@
 
 USE_PSEUDOHIRES = 0
 USE_INTERLACE = 0
+USE_AUDIO = 1
 
 .segment "ZEROPAGE"
 nmis: .res 1
@@ -64,7 +65,9 @@ OAMHI: .res 512
   ; the sound CPU is running the IPL (initial program load), which is
   ; designed to receive data from the main CPU through communication
   ; ports at $2140-$2143.  Load a program and start it running.
-  jsl spc_boot_apu
+  .if ::USE_AUDIO
+    jsl spc_boot_apu
+  .endif
 
   jsl load_bg_tiles  ; fill pattern table
   jsl draw_bg        ; fill nametable
@@ -72,6 +75,7 @@ OAMHI: .res 512
 
   ; In LoROM no larger than 16 Mbit, all program banks can reach
   ; the system area (low RAM, PPU ports, and DMA ports).
+  ; This isn't true of larger LoROM or of HiROM (without tricks).
   phk
   plb
 
