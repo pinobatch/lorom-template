@@ -49,6 +49,14 @@ REGION_AMERICA = $01
 REGION_PAL = $02
 
 .segment "SNESHEADER"
+  .byte "  "          ; publisher ID, ASCII
+  .byte "XLRW"        ; Game registration code (as in SNS-xxxx-USA)
+  .res 6, $00         ; reserved
+  .byte MEMSIZE_NONE  ; log2(backup flash size) - 10
+  .byte MEMSIZE_NONE  ; log2(expansion work RAM size) - 10
+  .byte 0             ; related to promo versions
+  .byte 0             ; Coprocessor subtype
+
 romname:
   ; The ROM name must be no longer than 21 characters.
   ; Longest possible is "PINO'S LOROM TEMPLATE"
@@ -58,11 +66,11 @@ romname:
     .res romname + 21 - *, $20  ; space padding
   .endif
   .byte MAPPER_LOROM|ROMSPEED_200NS
-  .byte $00   ; 00: no extra RAM; 02: RAM with battery
-  .byte MEMSIZE_256KB  ; ROM size (08-0C typical)
-  .byte MEMSIZE_NONE   ; backup RAM size (01,03,05 typical; Dezaemon has 07)
+  .byte $00   ; Cart type. 00: no extra RAM; 02: RAM with battery
+  .byte MEMSIZE_256KB  ; log2(ROM size) - 10; 08-0C typical
+  .byte MEMSIZE_NONE   ; log2(backup RAM size) - 10; 01,03,05 typical; Dezaemon has 07
   .byte REGION_AMERICA
-  .byte $33   ; publisher id, or $33 for see 16 bytes before header
+  .byte $33   ; Publisher ID, or $33 for see 16 bytes before header
   .byte $00   ; ROM revision number
   .word $0000 ; sum of all bytes will be poked here after linking
   .word $0000 ; $FFFF minus above sum will also be poked here
