@@ -5,9 +5,9 @@
 
 .segment "CODE3"
 ;;
-; Clears 2048 bytes ($1000 words) of video memory to a constant
-; value.  This can be one nametable, 128 2bpp tiles, 64 4bpp tiles,
-; or 32 8bpp tiles.  Must be called during vertical or forced blank.
+; Clears 2048 bytes ($400 words) of video memory to a constant value.
+; This can be one nametable, 128 2bpp tiles, 64 4bpp tiles, or
+; 32 8bpp tiles.  Must be called during vertical or forced blank.
 ; @param X starting address of nametable in VRAM (16-bit)
 ; @param Y value to write (16-bit)
 .proc ppu_clear_nt
