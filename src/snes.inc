@@ -31,6 +31,13 @@ PPUBRIGHT = $2100
 ; 76543210
 ; |   ++++- brightness (F: max)
 ; +-------- 1: disable rendering
+;
+; Rendering on when bit 7 is false is the opposite sense from bit 7
+; of LCDC on Game Boy, but the same sense as bit 7 of DISPCNT on GBA.
+; Think of it as two's complement: rendering is on when brightness
+; is positive or off when brightness is negative.
+; "Is the PPU on?"
+; "Negative."
 FORCEBLANK = $80
 
 PPURES = $2133
