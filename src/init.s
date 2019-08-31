@@ -120,7 +120,7 @@ map_mode        = $00FFD5
   lda f:map_mode
   and #$10
   beq not_fastrom
-    lda #$01
+    inc a
   not_fastrom:
   sta MEMSEL
 
