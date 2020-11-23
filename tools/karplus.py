@@ -252,8 +252,10 @@ def main(argv=None):
     save_wave_as_mono16(options.outfilename, options.rate, outbuf)
     
 if __name__=='__main__':
-##    main([sys.argv[0], '-o', 'test.wav'])
-##    main([sys.argv[0], '-o', 'karplusbass.wav', '-n', '1024',
-##          '-p', '64', '-r', '4186', '-e', 'square:1:4',
-##          '-a', '30000', '-g', '1.0', '-f', '.5'])
-    main()
+    if 'idlelib' in sys.modules:
+##        main([sys.argv[0], '-o', 'test.wav'])
+        main([sys.argv[0], '-o', 'karplusbass.wav', '-n', '4096',
+              '-p', '64', '-r', '4186', '-e', 'square:1:4',
+              '-a', '30000', '-g', '1.0', '-f', '.5'])
+    else:
+        main()

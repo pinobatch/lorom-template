@@ -106,9 +106,9 @@ nexttick:
 
 .proc pently_init
   ldy #$7F
-  lda #DSP_LVOL  ; master volume left
+  lda #DSP_LVOL  ; overall output volume left
   stya DSPADDR
-  lda #DSP_RVOL  ; master volume right
+  lda #DSP_RVOL  ; overall output volume right
   stya DSPADDR
 
   ; Disable the APU features we're not using

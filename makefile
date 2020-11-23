@@ -25,7 +25,7 @@ brrlist = \
 
 AS65 := ca65
 LD65 := ld65
-CFLAGS65 = 
+CFLAGS65 := -g
 objdir := obj/snes
 srcdir := src
 imgdir := tilesets
@@ -104,7 +104,7 @@ objlistospc = $(foreach o,$(objlistspc),$(objdir)/$(o).o)
 brrlisto = $(foreach o,$(brrlist),$(objdir)/$(o).brr)
 
 map.txt $(title).sfc: lorom256k.cfg $(objlisto)
-	$(LD65) -o $(title).sfc -m map.txt -C $^
+	$(LD65) -o $(title).sfc --dbgfile $(title).dbg -m map.txt -C $^
 	$(PY) tools/fixchecksum.py $(title).sfc
 
 spcmap.txt $(title).spc: spc.cfg $(objlistospc)
