@@ -127,7 +127,7 @@ quant: number by which all residuals shall be multiplied
 
 def encode_brr(wav, looped=False):
     prevs = []
-    out = array.array('B')
+    out = bytearray()
     for t in range(0, len(wav), 16):
         piece = wav[t:t + 16]
         if prevs:
@@ -145,7 +145,7 @@ def encode_brr(wav, looped=False):
         while logquant < 12 and peak > (15 << logquant):
             logquant += 1
         resids, prevs = enfilter(piece, brr_filters[filterid],
-                                 prevs or [], 2 << logquant)
+                                 prevs or [], 1 << (logquant + 1))
         resids.extend([0] * (16 - len(resids)))
         byte0 = (logquant << 4) | (filterid << 2)
         if t + 16 >= len(wav):
@@ -157,19 +157,19 @@ def encode_brr(wav, looped=False):
             hinibble = resids[i] & 0x0F
             lonibble = resids[i + 1] & 0x0F
             out.append((hinibble << 4) | lonibble)
-    return out.tostring()
+    return bytes(out)
 
 def decode_brr(brrdata):
     prevs = [0, 0]
     out = []
     for i in range(0, len(brrdata), 9):
-        piece = array.array('B', brrdata[i:i + 9])
+        piece = bytes(brrdata[i:i + 9])
         logquant = piece[0] >> 4
         filterid = (piece[0] >> 2) & 0x03
         resids = [((b >> i & 0x0F) ^ 8) - 8
                   for b in piece[1:] for i in (4, 0)]
         decoded = defilter(resids, brr_filters[filterid],
-                           prevs, 2 << logquant)
+                           prevs, 1 << (logquant + 1))
 ##        print("filter #%d, scale %d,\nresids %s\n%s"
 ##              % (filterid, 1 << logquant, repr(resids), repr(decoded)))
         out.extend(decoded)
