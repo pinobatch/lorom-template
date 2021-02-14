@@ -98,7 +98,8 @@ quant: None during test filtering; 2 to 4096 during encoding
                    for coeff, prev in zip(coeffs, prevs[-len(coeffs):]))
         rescaled = resid = (c - pred)
         if quant:
-            resid = max(-8, min(7, int(round(resid / quant))))
+            resid = int(round(resid / quant))
+            resid = max(-8, min(7, resid))
             rescaled = resid * quant
         out.append(resid)
         prevs.append(rescaled + pred)
@@ -125,11 +126,20 @@ quant: number by which all residuals shall be multiplied
         prevs.append(c)
     return out
 
+CLIP_MAX = 32000
+
 def encode_brr(wav, looped=False):
     prevs = []
     out = bytearray()
     for t in range(0, len(wav), 16):
         piece = wav[t:t + 16]
+
+        # Occasionally, treble boost may cause a sample to clip.
+        peak = max(abs(c) for c in piece)
+        if peak > CLIP_MAX:
+##            print("clip peak %d at time %d" % (peak, t))
+            piece = [max(min(c, CLIP_MAX), -CLIP_MAX) for c in piece]
+
         if prevs:
             # Calculate the peak residual for this piece with
             # each filter, then choose the smallest
@@ -141,11 +151,12 @@ def encode_brr(wav, looped=False):
             # first block always uses filter 0
             peak = max(abs(resid) for resid in piece)
             filterid = 0
+
         logquant = 0
-        while logquant < 12 and peak > (15 << logquant):
+        while logquant < 12 and peak >= (7 << logquant):
             logquant += 1
         resids, prevs = enfilter(piece, brr_filters[filterid],
-                                 prevs or [], 1 << (logquant + 1))
+                                 prevs or [], 1 << (logquant + 0))
         resids.extend([0] * (16 - len(resids)))
         byte0 = (logquant << 4) | (filterid << 2)
         if t + 16 >= len(wav):
@@ -169,7 +180,7 @@ def decode_brr(brrdata):
         resids = [((b >> i & 0x0F) ^ 8) - 8
                   for b in piece[1:] for i in (4, 0)]
         decoded = defilter(resids, brr_filters[filterid],
-                           prevs, 1 << (logquant + 1))
+                           prevs, 1 << (logquant + 0))
 ##        print("filter #%d, scale %d,\nresids %s\n%s"
 ##              % (filterid, 1 << logquant, repr(resids), repr(decoded)))
         out.extend(decoded)
