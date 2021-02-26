@@ -208,28 +208,35 @@ Audio converter for Super NES S-DSP.
 def parse_argv(argv):
     parser = optparse.OptionParser(usage=usageText, version=versionText,
                                    description=descriptionText)
-    parser.add_option("-i", dest="infilename",
+    parser.add_option("-i", "--input", dest="infilename",
                       help="read from INFILE",
                       metavar="INFILE")
-    parser.add_option("-o", dest="outfilename",
+    parser.add_option("-o", "--output", dest="outfilename",
                       help="write output to OUTFILE",
                       metavar="OUTFILE")
     parser.add_option("-d", "--decompress",
                       action="store_true", dest="decompress", default=False,
                       help="decompress BRR to wave (default: compress wave to BRR)")
+    parser.add_option("--emph", "--emphasize",
+                      action="store_true", dest="emph", default=False,
+                      help="read wave, write preemphasized (treble boosted) wave")
+    parser.add_option("--deemph", "--deemphasize",
+                      action="store_true", dest="deemph", default=False,
+                      help="read wave, write deemphasized wave")
     parser.add_option("-r", "--rate", dest="rate",
-                      metavar="RATE", type="int", default=8372,
-                      help="with -d, set the wave sample rate in Hz (default: 8372)")
+                      metavar="RATE", type="int", default=None,
+                      help="output wave sample rate in Hz "
+                      "(default: 8372 for -d; input rate for --emph and --deeemph)")
     parser.add_option("--loop",
                       action="store_true", dest="loop", default=False,
                       help="set the BRR's loop bit")
     parser.add_option("--skip-filter",
                       action="store_true", dest="skipfilter", default=False,
-                      help="skip the preemphasis filter")
+                      help="skip (de)emphasis when (de)compressing")
 
     (options, pos) = parser.parse_args(argv[1:])
 
-    if not 10 <= options.rate <= 128000:
+    if options.rate is not None and not 10 <= options.rate <= 128000:
         parser.error("output sample rate must be 10 to 128000 Hz")
 
     # Fill unfilled roles with positional arguments
@@ -252,16 +259,25 @@ def parse_argv(argv):
         pass
     return options
 
+DEFAULT_RATE = 8372
+
 def main(argv=None):
-    argv = argv or sys.argv
-    opts = parse_argv(argv)
-    if opts.decompress:
+    opts = parse_argv(argv or sys.argv)
+    if opts.emph:
+        freq, wave = load_wave_as_mono_s16(opts.infilename)
+        wave = brr_preemphasize(wave)
+        save_wave_as_mono_s16(opts.outfilename, opts.rate or freq, wave)
+    elif opts.deemph:
+        freq, wave = load_wave_as_mono_s16(opts.infilename)
+        wave = brr_deeemphasize(wave)
+        save_wave_as_mono_s16(opts.outfilename, opts.rate or freq, wave)
+    elif opts.decompress:
         with open(opts.infilename, 'rb') as infp:
             brrdata = infp.read()
         out = decode_brr(brrdata)
         if not opts.skipfilter:
             out = brr_deemphasize(out)
-        save_wave_as_mono_s16(opts.outfilename, opts.rate, out)
+        save_wave_as_mono_s16(opts.outfilename, opts.rate or DEFAULT_RATE, out)
     else:
         freq, wave = load_wave_as_mono_s16(opts.infilename)
         if not opts.skipfilter:
@@ -271,5 +287,8 @@ def main(argv=None):
             outfp.write(brrdata)
 
 if __name__=='__main__':
-    main()
+    if "idlelib" in sys.modules:
+        main()
+    else:
+        main()
 ##    convolve_test()
