@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+#
+# Hi-hat generator
+#
+# Copyright 2017 Damian Yerrick
+# Copying and distribution of this file, with or without
+# modification, are permitted in any medium without royalty
+# provided the copyright notice and this notice are preserved.
+# This file is offered as-is, without any warranty.
+#
 from contextlib import closing
 import sys
 import random

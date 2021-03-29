@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+# Zipfile packing tool
+#
+# Copyright 2014-2015 Damian Yerrick
+# Copying and distribution of this file, with or without
+# modification, are permitted in any medium without royalty
+# provided the copyright notice and this notice are preserved.
+# This file is offered as-is, without any warranty.
+#
 import sys
 import os
 import argparse

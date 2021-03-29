@@ -21,7 +21,10 @@ do not need this header.
 versionText = """
 0.01wip
 Copyright 2016 Damian Yerrick
-[free software license notice goes here]
+Copying and distribution of this file, with or without
+modification, are permitted in any medium without royalty
+provided the copyright notice and this notice are preserved.
+This file is offered as-is, without any warranty.
 """
 
 def parse_argv(argv):
