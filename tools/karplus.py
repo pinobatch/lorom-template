@@ -2,8 +2,6 @@
 from __future__ import with_statement, division, print_function
 from contextlib import closing
 import array, wave, sys, os, optparse, random
-if str is not bytes:
-    xrange = range
 
 help_version = """karplus 0.01
 Copyright 2015 Damian Yerrick
@@ -107,7 +105,7 @@ echoed 16 times.
 
 def random_excitation(length, amplitude, args=None):
     return [random.randrange(-amplitude, amplitude + 1)
-            for i in xrange(length)]
+            for i in range(length)]
 
 def square_excitation(length, amplitude, args=None):
     num = int(args[0]) if len(args) >= 2 else 1
@@ -141,9 +139,8 @@ def saw_excitation(length, amplitude, args=None):
     if not 0 < power:
         raise ValueError("exponent %f must be greater than 0" % power)
 
-    scale = amplitude / ramp[0]
     ramp = [(i / (highlen - 1)) ** power * amplitude
-            for i in xrange(highlen - 1, 0, -2)]
+            for i in range(highlen - 1, 0, -2)]
     ramp = ramp[::-1] + [-i for i in ramp]
     return ramp + [0] * (length - len(ramp))
 
