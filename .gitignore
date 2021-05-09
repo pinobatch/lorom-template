@@ -11,6 +11,7 @@
 /spcmap.txt
 /lorom-template.sfc
 /lorom-template.spc
+/lorom-template.dbg
 /lorom-template-*.zip
 __pycache__/
 *.pyc
