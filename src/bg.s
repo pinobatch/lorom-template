@@ -143,5 +143,5 @@ palette:
   .word RGB( 0, 0,15),RGB(15,15, 0),RGB(23,23, 8),RGB(31,31,16)
 palette_size = * - palette
 
-layer1_palette = palette
+layer1_palette := palette
 layer1_palette_size = palette_size

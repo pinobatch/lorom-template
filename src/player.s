@@ -60,7 +60,7 @@ player_facing:    .res 1
 
 ; except for STZs and BRAs, the following subroutine is
 ; direct copypasta from the NES template code
-cur_keys = JOY1CUR+1
+cur_keys := JOY1CUR+1
 
 ; constants used by move_player
 ; PAL frames are about 20% longer than NTSC frames.  So if you make
@@ -246,7 +246,7 @@ doneWallCollision:
   ; offset by about a pixel.
   seta8
   lda player_frame
-  cmp #7  ; C = true for frame 7, false otherwise
+  cmp #7  ; CF is true for frame 7, false otherwise
   lda #0
   bcc have_xoffset
   bit player_facing

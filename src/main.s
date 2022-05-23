@@ -177,6 +177,3 @@ padwait:
 
   jmp forever
 .endproc
-
-
-

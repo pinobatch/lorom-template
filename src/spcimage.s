@@ -9,11 +9,12 @@ addr1 = addr
   movw <addr, ya
 .endmacro
 
-TIMEREN     = $F1  ; 0-2: enable timer; 7: enable ROM in $FFC0-$FFFF
-DSPADDR     = $F2
-DSPDATA     = $F3
-TIMERPERIOD = $FA  ; Divisors for timers (0, 1: 8 kHz base; 2: 64 kHz base)
-TIMERVAL    = $FD  ; Number of times timer incremented (bits 3-0; cleared on read)
+; MMIO at $00F0-$00FF
+TIMEREN     := $00F1  ; 0-2: enable timer; 7: enable ROM in $FFC0-$FFFF
+DSPADDR     := $00F2
+DSPDATA     := $00F3
+TIMERPERIOD := $00FA  ; Divisors for timers (0, 1: 8 kHz base; 2: 64 kHz base)
+TIMERVAL    := $00FD  ; Number of times timer incremented (bits 3-0; cleared on read)
 
 DSP_CLVOL    = $00
 DSP_CRVOL    = $01

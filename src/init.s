@@ -4,26 +4,26 @@
 .smart
 
 ; Mask off low byte to allow use of $000000-$00000F as local variables
-ZEROPAGE_BASE   = __ZEROPAGE_RUN__ & $FF00
+ZEROPAGE_BASE   := __ZEROPAGE_RUN__ & $FF00
 
 ; Make sure these conform to the linker script (e.g. lorom256.cfg).
-STACK_BASE      = $0100
+STACK_BASE      := $0100
 STACK_SIZE      = $0100
-LAST_STACK_ADDR = STACK_BASE + STACK_SIZE - 1
+LAST_STACK_ADDR := STACK_BASE + STACK_SIZE - 1
 
-PPU_BASE        = $2100
-CPUIO_BASE      = $4200
+PPU_BASE        := $2100
+CPUIO_BASE      := $4200
 
 ; MMIO is mirrored into $21xx, $42xx, and $43xx of all banks $00-$3F
 ; and $80-$BF.  To make it work no matter the current data bank, we
 ; can use a long address in a nonzero bank.
 ; Bit 0 of MEMSEL enables fast ROM access above $808000.
-MEMSEL          = $80420D
+MEMSEL          := $80420D
 
 ; Bit 4 of the byte at $FFD5 in the cartridge header specifies
 ; whether a game should be manufactured with slow or fast ROM.
 ; The init code enables fast ROM if this bit is true.
-map_mode        = $00FFD5
+map_mode        := $00FFD5
 
 ; A tiny stub in bank $00 needs to set interrupt priority to 1,
 ; leave 6502 emulation mode, and long jump to the rest of init code
