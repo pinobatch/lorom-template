@@ -173,7 +173,7 @@ padwait:
   bit VBLSTATUS
   bne padwait
   stz BGSCROLLX
-  stz BGSCROLLX
+  stz BGSCROLLY
 
   jmp forever
 .endproc
