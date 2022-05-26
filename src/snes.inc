@@ -310,7 +310,7 @@ JOYOUT := $4201
 ; +-------- Controller 2 pin 6 output
 
 ; Results of the autoreader
-JOY1CUR   := $4218    ; Bit 0: used by standard controllers
+JOY1CUR   := $4218  ; Bit 0: used by standard controllers
 JOY2CUR   := $421A
 JOY1B1CUR := $421C  ; Bit 1: used by multitap and a few oddball
 JOY2B1CUR := $421E  ; input devices
@@ -333,6 +333,22 @@ KEY_A      = $0080
 KEY_X      = $0040
 KEY_L      = $0020
 KEY_R      = $0010
+
+; It is also possible to read the controller by reading only the
+; upper 8 bits in 8-bit mode (m=1).  This may be the path of least
+; resistance for porting NES software to the Super NES.  Be careful
+; not to mix _HI addresses with non-_HI constants or vice versa.
+; A, X, L, and R cannot be read this way.
+JOY1CUR_HI   := JOY1CUR + 1
+JOY2CUR_HI   := JOY2CUR + 1
+KEY_HI_B      = .hibyte(KEY_B)
+KEY_HI_Y      = .hibyte(KEY_Y)
+KEY_HI_SELECT = .hibyte(KEY_SELECT)
+KEY_HI_START  = .hibyte(KEY_START)
+KEY_HI_UP     = .hibyte(KEY_UP)
+KEY_HI_DOWN   = .hibyte(KEY_DOWN)
+KEY_HI_LEFT   = .hibyte(KEY_LEFT)
+KEY_HI_RIGHT  = .hibyte(KEY_RIGHT)
 
 ; S-CPU multiply and divide ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
