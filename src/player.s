@@ -58,9 +58,11 @@ player_facing:    .res 1
   rtl
 .endproc
 
-; except for STZs and BRAs, the following subroutine is
-; direct copypasta from the NES template code
-cur_keys := JOY1CUR+1
+; Except for STZs and BRAs, the following subroutine is copied and
+; pasted from the NES template code.  We use JOY1CUR_HI for this
+; particular routine because that most directly corresponds to the
+; bit layout of the NES controller.  When using JOYxCUR_HI, we also
+; use the matching set of KEY_HI_* constants.
 
 ; constants used by move_player
 ; PAL frames are about 20% longer than NTSC frames.  So if you make
@@ -81,8 +83,8 @@ RIGHT_WALL = 224
   ; Acceleration to right: Do it only if the player is holding right
   ; on the Control Pad and has a nonnegative velocity.
   setaxy8
-  lda cur_keys
-  and #>KEY_RIGHT
+  lda JOY1CUR_HI
+  and #KEY_HI_RIGHT
   beq notRight
   lda player_dxlo
   bmi notRight
@@ -115,8 +117,8 @@ RIGHT_WALL = 224
 
   ; Acceleration to left: Do it only if the player is holding left
   ; on the Control Pad and has a nonpositive velocity.
-  lda cur_keys
-  and #>KEY_LEFT
+  lda JOY1CUR_HI
+  and #KEY_HI_LEFT
   beq notLeft
   lda player_dxlo
   beq isLeft
