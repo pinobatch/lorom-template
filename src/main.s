@@ -172,6 +172,10 @@ forever:
 padwait:
   bit VBLSTATUS
   bne padwait
+
+  ; This is where you'd usually update the scroll position.
+  ; The scrolling registers are write-twice: first write bits 7-0
+  ; then write bits 9-8 to the same address.
   stz BGSCROLLX
   stz BGSCROLLX
 
