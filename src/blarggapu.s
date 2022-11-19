@@ -1,6 +1,6 @@
 ; High-level interface to SPC-700 bootloader
 ; Originally by "blargg" (Shay Green)
-; http://wiki.superfamicom.org/snes/show/How+to+Write+to+DSP+Registers+Without+any+SPC-700+Code
+; https://wiki.superfamicom.org/how-to-write-to-dsp-registers-without-any-spc-700-code
 ;
 ; 1. Call spc_wait_boot
 ; 2. To upload data:

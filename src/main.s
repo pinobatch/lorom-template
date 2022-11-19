@@ -102,7 +102,7 @@ OAMHI: .res 512
   ; Pseudo hi-res and interlace are optional hardware features.
   ; This demo doesn't use them much, but you can enable them when
   ; building it to see what they look like.  They're described at
-  ; http://wiki.superfamicom.org/snes/show/Registers
+  ; https://wiki.superfamicom.org/registers
 
 .if ::USE_PSEUDOHIRES
   ; set up plane 1's scroll, offset by 4 pixels, to show
