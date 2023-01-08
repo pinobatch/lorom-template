@@ -1,4 +1,5 @@
-IF THIS FILE HAS NO LINE BREAKS:  View it in a web browser. 
+IF THIS FILE HAS NO LINE BREAKS:  View it in a web browser.  
+(Some text editors do not understand UNIX-style line breaks.)
 
 LoROM template
 ==============
