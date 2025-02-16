@@ -34,7 +34,7 @@ OAMHI: .res 512
   ; Only banks $00-$3F and $80-$BF can do this, not $40-$7D or
   ; $C0-$FF.  ($7E can access low RAM but not the PPU.)  But in a
   ; LoROM program no larger than 16 Mbit, the CODE segment is in a
-  ; bank that can, so copy the data bank to the program bank.
+  ; bank that can, so point the data bank at the program bank.
   phb
   phk
   plb
