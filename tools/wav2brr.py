@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Wave to BRR converter
-# Copyright 2016, 2021 Damian Yerrick
+# Copyright 2014, 2021 Damian Yerrick
 #
 # Copying and distribution of this file, with or without
 # modification, are permitted in any medium without royalty
@@ -204,7 +204,7 @@ def decode_brr(brrdata):
 usageText = "usage: %prog [options] [-i] INFILE [-o] OUTFILE"
 versionText = """wav2brr 0.04
 
-Copyright 2014 Damian Yerrick
+Copyright 2014, 2021 Damian Yerrick
 Copying and distribution of this file, with or without
 modification, are permitted in any medium without royalty provided
 the copyright notice and this notice are preserved in all source
@@ -212,7 +212,10 @@ code copies. This file is offered as-is, without any warranty.
 """
 descriptionText = """
 Audio converter for Super NES S-DSP.
-"""
+""".strip()
+
+# 8372 Hz is concert middle C times 32 samples (two BRR blocks) per cycle
+DEFAULT_RATE = 8372
 
 def parse_argv(argv):
     parser = optparse.OptionParser(usage=usageText, version=versionText,
@@ -226,16 +229,17 @@ def parse_argv(argv):
     parser.add_option("-d", "--decompress",
                       action="store_true", dest="decompress", default=False,
                       help="decompress BRR to wave (default: compress wave to BRR)")
-    parser.add_option("--emph", "--emphasize",
+    parser.add_option("--emphasize",
                       action="store_true", dest="emph", default=False,
                       help="read wave, write preemphasized (treble boosted) wave")
-    parser.add_option("--deemph", "--deemphasize",
+    parser.add_option("--deemphasize",
                       action="store_true", dest="deemph", default=False,
                       help="read wave, write deemphasized wave")
     parser.add_option("-r", "--rate", dest="rate",
                       metavar="RATE", type="int", default=None,
-                      help="output wave sample rate in Hz "
-                      "(default: 8372 for -d; input rate for --emph and --deeemph)")
+                      help="sample rate in Hz when writing wave file "
+                      "(default: %d for -d; equal to input rate for --emph and --deemph)"
+                      % (DEFAULT_RATE,))
     parser.add_option("--loop",
                       action="store_true", dest="loop", default=False,
                       help="set the BRR's loop bit")
@@ -267,8 +271,6 @@ def parse_argv(argv):
     except StopIteration:
         pass
     return options
-
-DEFAULT_RATE = 8372
 
 def main(argv=None):
     opts = parse_argv(argv or sys.argv)
