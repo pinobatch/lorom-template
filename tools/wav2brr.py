@@ -30,7 +30,9 @@ convolve = np.convolve if using_numpy else naive_convolve
 def convolve_test():
     fircoeffs = [1/16, 4/16, 6/16, 4/16, 1/16]
     data = [0, 1, 0, 0, 0, 1, 2, 3, 4, 5]
-    print(naive_convolve(fircoeffs, data))
+    naive_result = naive_convolve(fircoeffs, data)
+    assert len(fircoeffs) + len(data) == len(naive_result) + 1
+    print(naive_result)
     print(list(np.convolve(fircoeffs, data)))
 
 def load_wave_as_mono_s16(filename):
