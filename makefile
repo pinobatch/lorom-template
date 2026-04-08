@@ -84,7 +84,7 @@ clean:
 
 dist: zip
 zip: $(title)-$(version).zip
-$(title)-$(version).zip: zip.in all README.md $(objdir)/index.txt
+$(title)-$(version).zip: zip.in all README.md $(objdir)/.gitkeep
 	$(PY) tools/zipup.py $< $(title)-$(version) -o $@
 	-advzip -z3 $@
 
@@ -95,8 +95,8 @@ zip.in:
 	echo $(title).sfc >> $@
 	echo $(title).spc >> $@
 
-$(objdir)/index.txt: makefile
-	echo "Files produced by build tools go here. (This file's existence forces the unzip tool to create this folder.)" > $@
+$(objdir)/.gitkeep: makefile
+	echo https://www.freecodecamp.org/news/what-is-gitkeep/ > $@
 
 # Rules for ROM
 
